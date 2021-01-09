@@ -18,3 +18,7 @@ def getTrackIDs(user, playlist_id):
     return ids
 
 ids = getTrackIDs('angelicadietzel', '4R0BZVh27NUJhHGLNitU08')
+
+if __name__ == "__main__":
+    print(len(ids))
+    print(ids)
