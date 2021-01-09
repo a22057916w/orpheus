@@ -46,8 +46,8 @@ def getTrackFeatures(id):
 
 if __name__ == "__main__":
 
+    # get track DIs and check for it
     ids = getTrackIDs('angelicadietzel', '4R0BZVh27NUJhHGLNitU08')
-
     print(len(ids))
     print(ids)
 
