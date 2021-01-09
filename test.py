@@ -50,3 +50,14 @@ if __name__ == "__main__":
 
     print(len(ids))
     print(ids)
+
+    # loop over track ids
+    tracks = []
+    for i in range(len(ids)):
+        time.sleep(.5)
+        track = getTrackFeatures(ids[i])
+        tracks.append(track)
+
+    # create dataset
+    df = pd.DataFrame(tracks, columns = ['name', 'album', 'artist', 'release_date', 'length', 'popularity', 'danceability', 'acousticness', 'danceability', 'energy', 'instrumentalness', 'liveness', 'loudness', 'speechiness', 'tempo', 'time_signature'])
+    df.to_csv("spotify.csv", sep = ',')
