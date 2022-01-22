@@ -1,9 +1,16 @@
 import discord
+import os
 
 #導入Discord.py
 import discord
+
+
 #client是我們與Discord連結的橋樑
 client = discord.Client()
+
+
+# Get the API token from the .env file.
+DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 
 #調用event函式庫
 @client.event
@@ -27,4 +34,4 @@ async def on_message(message):
       else:
         await message.channel.send(tmp[1])
 
-client.run('NzIwNjkzMDEzOTQ0MjA1MzIz.XuJrrA.33fN0prhWJthqbXDvGu4X5VxPCk')
+client.run(DISCORD_TOKEN)
