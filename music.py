@@ -1,9 +1,13 @@
+import os
 import asyncio
 
 import discord
 import youtube_dl
 
 from discord.ext import commands
+
+# Get the API token from the .env file.
+DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 
 # Suppress noise about console usage from errors
 youtube_dl.utils.bug_reports_message = lambda: ''
@@ -132,4 +136,4 @@ async def on_ready():
     print('------')
 
 bot.add_cog(Music(bot))
-bot.run('NzIwNjkzMDEzOTQ0MjA1MzIz.XuJrrA.gQ5sMA7_FS34SewbivJIdzqv8Bg')
+bot.run(DISCORD_TOKEN)
