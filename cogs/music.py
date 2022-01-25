@@ -82,7 +82,7 @@ class Music(commands.Cog):
     async def yt(self, ctx, *, url):
         """Plays from a url (almost anything youtube_dl supports)"""
 
-        async with ctx.typing():
+        async with ctx.typing():    # display "The bot is typing..."
             player = await YTDLSource.from_url(url, loop=self.bot.loop)
             ctx.voice_client.play(player, after=lambda e: print('Player error: %s' % e) if e else None)
 
@@ -107,6 +107,20 @@ class Music(commands.Cog):
 
         ctx.voice_client.source.volume = volume / 100
         await ctx.send("Changed volume to {}%".format(volume))
+
+    @commands.command()
+    async def pause(self, ctx):
+        if ctx.voice_client.is_playing():
+            await ctx.voice_client.pause()
+        else:
+            await ctx.send("I'm not playing anythin at this moment.")
+
+    @commands.command()
+    async def resume(self, ctx):
+        if ctx.voice_client.is_paused():
+            await ctx.voice_client.resume()
+        else:
+            await ctx.send("I was not playing anything before this.")
 
     @commands.command()
     async def stop(self, ctx):
