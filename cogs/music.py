@@ -31,7 +31,8 @@ ffmpeg_options = {
 
 ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
 
-
+# If you turn up Master volume, everything gets louder...headphones, CD, etc. PCM turns up the volume just for sound files,
+# but CD volume would remain the same. Useful if you'd like MP3's to be louder than audio CD's.
 class YTDLSource(discord.PCMVolumeTransformer):
     def __init__(self, source, *, data, volume=0.5):
         super().__init__(source, volume)
@@ -41,7 +42,8 @@ class YTDLSource(discord.PCMVolumeTransformer):
         self.title = data.get('title')
         self.url = data.get('url')
 
-    @classmethod
+    # The method takes in the URL as a parameter and returns the filename of the audio file which gets downloaded.
+    @classmethod    # 一般函數的第一個參數指的是該物件的記憶體位置，classmethod的第一個參數指的是該類別的記憶體位置。用法類似static method
     async def from_url(cls, url, *, loop=None, stream=False):
         loop = loop or asyncio.get_event_loop()
         data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=not stream))
