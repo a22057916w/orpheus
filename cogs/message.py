@@ -2,15 +2,27 @@ import discord
 from discord.ext import commands,tasks
 
 import os
+import random
 
 class Message(commands.Cog):
-
     def __init__(self, bot):
         self.bot = bot
 
     #當有訊息時
     @commands.Cog.listener()
     async def on_message(self, message):
+        evil_reponse = [
+            "Fuck you",
+            "Go fuck yourself",
+            "Fuck Off",
+            "Fuck you, too",
+            "幹三小",
+            "幹你老師",
+            "賽你娘",
+            "幹",
+            "哭阿"
+        ]
+
         #排除自己的訊息，避免陷入無限循環
         if message.author == self.bot.user:
             return
@@ -25,11 +37,16 @@ class Message(commands.Cog):
           else:
             await message.channel.send(tmp[1])
 
+
+        if "幹" in message.content:
+            await message.channel.send(f"{message.author.name} {random.choice(evil_reponse)}")
+
         if message.content.lower() == "hello":
             await message.channel.send(f"Hello, {message.author.name}")
 
         for member in message.mentions:
             await message.channel.send(member.mention + "你過來一下!")
+
 
 
 
