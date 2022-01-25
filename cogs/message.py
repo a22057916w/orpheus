@@ -29,9 +29,10 @@ class Message(commands.Cog):
             await message.channel.send(f"Hello, {message.author.name}")
 
         for member in message.mentions:
-            await message.channel.send(f'@{member.name} 你過來一下！')
+            await message.channel.send(member.mention + "你過來一下!")
 
-            
+
+
 # An extension must have a global function, setup defined as the entry point on what to do when the extension is loaded.
 # This entry point must have a single argument, the bot.
 def setup(bot):
