@@ -44,9 +44,6 @@ class Message(commands.Cog):
         if "幹" in message.content:
             await message.channel.send(f"{message.author.name} {random.choice(evil_reponse)}")
 
-        if message.content.lower() == "hello":
-            await message.channel.send(f"Hello, {message.author.name}")
-
         for member in message.mentions:
             await message.channel.send(member.mention + "你過來一下!")
 
