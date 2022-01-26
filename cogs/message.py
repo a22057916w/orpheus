@@ -3,6 +3,7 @@ from discord.ext import commands,tasks
 
 import os
 import random
+import re
 
 class Message(commands.Cog):
     def __init__(self, bot):
@@ -37,6 +38,8 @@ class Message(commands.Cog):
           else:
             await message.channel.send(tmp[1])
 
+        if re.fullmatch(r'r+', message.content, re.IGNORECASE):
+            await message.channel.send("RRRRRRRRRRRRRRRRR\n幫我開直播")
 
         if "幹" in message.content:
             await message.channel.send(f"{message.author.name} {random.choice(evil_reponse)}")
