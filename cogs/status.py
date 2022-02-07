@@ -10,7 +10,7 @@ class Status(commands.Cog):
 
     @commands.command()
     async def update_status(self, ctx):
-        await self.bot.change_presence(activity=discord.CustomActivity(name='Fuck this shit' ,emoji='🖥️'))
+        await self.bot.change_presence(activity=discord.Game(name="白痴花蓮" ,emoji='🖥️'))
 
 
 def setup(bot):

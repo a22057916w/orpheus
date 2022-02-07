@@ -30,7 +30,6 @@ async def reload(ctx, extension):
 # 當機器人完成啟動時
 @bot.event
 async def on_ready():
-    #await bot.change_presence(activity=discord.CustomActivity(name='Fuck this shit' ,emoji='🖥️'))
     print('目前登入身份：', bot.user)
 
 if __name__ == "__main__":
