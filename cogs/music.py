@@ -98,6 +98,9 @@ class Music(commands.Cog):
 
         await ctx.send('Now playing: {}'.format(player.title))
 
+    # @commands.command()
+    # async def repaet(self, ctx, *, url):
+
     @commands.command()
     async def volume(self, ctx, volume: int):
         """Changes the player's volume"""
