@@ -90,8 +90,8 @@ class Music(commands.Cog):
 
         await ctx.send('Now playing: {}'.format(player.title))
 
-    @commands.command(name="op!play", help="play music as stream")
-    async def stream(self, ctx, *, url):
+    @commands.command(name="play", help="play music as stream")
+    async def play(self, ctx, *, url):
         """Streams from a url (same as yt, but doesn't predownload)"""
 
         async with ctx.typing():
@@ -135,7 +135,7 @@ class Music(commands.Cog):
 
     @play.before_invoke
     @yt.before_invoke
-    @stream.before_invoke
+    #@stream.before_invoke
     async def ensure_voice(self, ctx):
         if ctx.voice_client is None:
             if ctx.author.voice:
