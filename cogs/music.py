@@ -58,7 +58,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
 
 class Music(commands.Cog):
     queue = []
-    
+
     def __init__(self, bot):
         self.bot = bot
 
@@ -71,14 +71,14 @@ class Music(commands.Cog):
 
         await channel.connect()
 
-    @commands.command()
-    async def play(self, ctx, *, query):
-        """Plays a file from the local filesystem"""
-
-        source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(query))
-        ctx.voice_client.play(source, after=lambda e: print('Player error: %s' % e) if e else None)
-
-        await ctx.send('Now playing: {}'.format(query))
+    # @commands.command()
+    # async def play(self, ctx, *, query):
+    #     """Plays a file from the local filesystem"""
+    #
+    #     source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(query))
+    #     ctx.voice_client.play(source, after=lambda e: print('Player error: %s' % e) if e else None)
+    #
+    #     await ctx.send('Now playing: {}'.format(query))
 
     @commands.command()
     async def yt(self, ctx, *, url):
@@ -90,7 +90,7 @@ class Music(commands.Cog):
 
         await ctx.send('Now playing: {}'.format(player.title))
 
-    @commands.command()
+    @commands.command(name="op!play", help="play music as stream")
     async def stream(self, ctx, *, url):
         """Streams from a url (same as yt, but doesn't predownload)"""
 
