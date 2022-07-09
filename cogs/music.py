@@ -57,6 +57,8 @@ class YTDLSource(discord.PCMVolumeTransformer):
 
 
 class Music(commands.Cog):
+    queue = []
+    
     def __init__(self, bot):
         self.bot = bot
 
