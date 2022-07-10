@@ -24,8 +24,10 @@ async def unload(ctx, extension):
 
 @bot.command()
 async def reload(ctx, extension):
-    bot.reload_extension(f'cogs.{extension}')
-    print(f'Reload module {extension} successfully')
+    async with ctx.typing():
+        bot.reload_extension(f'cogs.{extension}')
+        print(f'Reload module {extension} successfully')
+    await ctx.send(f'Reload module {extension} successfully')
 
 # 當機器人完成啟動時
 @bot.event
