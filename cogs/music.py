@@ -1,4 +1,5 @@
 import os
+import queue
 import asyncio
 
 import discord
@@ -95,20 +96,12 @@ class Music(commands.Cog):
     async def play(self, ctx, *, url):
         """Streams from a url (same as yt, but doesn't predownload)"""
 
-        async with ctx.typing():    # display "The bot is typing..."
-            if self.queue.qsize() == 0:
-                player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
-                await self.queue.put(player)
-
-            while(self.queue.empty() == False):
-                player = self.queue.get_nowait()
-                await ctx.send(player.title)
-                ctx.voice_client.play(player, after=lambda e: print('Player error: %s' % e) if e else None)
+        async with ctx.typing():
+            player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
+            ctx.voice_client.play(player, after=lambda e: print('Player error: %s' % e) if e else None)
 
         await ctx.send('Now playing: {}'.format(player.title))
 
-    # @commands.command()
-    # async def repaet(self, ctx, *, url):
 
     @commands.command()
     async def add(self, ctx, *, url):
