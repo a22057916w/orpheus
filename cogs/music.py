@@ -115,7 +115,7 @@ class Music(commands.Cog):
 
     @commands.command(help="Start a playlist")
     async def play_list(self, ctx):
-        """start a playlist"""
+        """start the playlist"""
 
         async with ctx.typing():
             player = self.queue.pop(0)
@@ -131,6 +131,14 @@ class Music(commands.Cog):
                 ctx.voice_client.play(player, after=lambda e: asyncio.run_coroutine_threadsafe(self.play_next(ctx), self.bot.loop))
 
             await ctx.send('Now playing: {}'.format(player.title))
+
+    @commands.command(name="queue", help="Check the playlist")
+    async def queue_(self, ctx):
+        songs = []
+        for player in self.queue:
+            songs.append(player.title)
+
+        await ctx.send(songs)
 
     @commands.command()
     async def volume(self, ctx, volume: int):
