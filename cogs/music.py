@@ -109,7 +109,7 @@ class Music(commands.Cog):
 
         async with ctx.typing():
             player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
-            self.queue.append(player)
+            self.queue.append(url)
 
         await ctx.send('Added audio: {} to playlist'.format(player.title))
 
@@ -118,7 +118,8 @@ class Music(commands.Cog):
         """start the playlist"""
 
         async with ctx.typing():
-            player = self.queue.pop(0)
+            url = self.queue.pop(0)
+            player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
             ctx.voice_client.play(player, after=lambda e: asyncio.run_coroutine_threadsafe(self.play_next(ctx), self.bot.loop))
 
         await ctx.send('Now playing: {}'.format(player.title))
@@ -127,7 +128,8 @@ class Music(commands.Cog):
     async def play_next(self, ctx):
         if len(self.queue) > 0:
             async with ctx.typing():
-                player = self.queue.pop(0)
+                url = self.queue.pop(0)
+                player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
                 ctx.voice_client.play(player, after=lambda e: asyncio.run_coroutine_threadsafe(self.play_next(ctx), self.bot.loop))
 
             await ctx.send('Now playing: {}'.format(player.title))
@@ -135,8 +137,8 @@ class Music(commands.Cog):
     @commands.command(name="queue", help="Check the playlist")
     async def queue_(self, ctx):
         songs = []
-        for player in self.queue:
-            songs.append(player.title)
+        for url in self.queue:
+            songs.append(url)
 
         await ctx.send(songs)
 
