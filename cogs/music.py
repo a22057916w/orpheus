@@ -57,10 +57,11 @@ class YTDLSource(discord.PCMVolumeTransformer):
 
 
 class Music(commands.Cog):
-    queue = []
+
 
     def __init__(self, bot):
         self.bot = bot
+        self.queue = asyncio.Queue()
 
     @commands.command()
     async def join(self, ctx, *, channel: discord.VoiceChannel):
@@ -80,28 +81,44 @@ class Music(commands.Cog):
     #
     #     await ctx.send('Now playing: {}'.format(query))
 
-    @commands.command()
-    async def yt(self, ctx, *, url):
-        """Plays from a url (almost anything youtube_dl supports)"""
-
-        async with ctx.typing():    # display "The bot is typing..."
-            player = await YTDLSource.from_url(url, loop=self.bot.loop)
-            ctx.voice_client.play(player, after=lambda e: print('Player error: %s' % e) if e else None)
-
-        await ctx.send('Now playing: {}'.format(player.title))
+    # @commands.command()
+    # async def yt(self, ctx, *, url):
+    #     """Plays from a url (almost anything youtube_dl supports)"""
+    #
+    #     async with ctx.typing():    # display "The bot is typing..."
+    #         player = await YTDLSource.from_url(url, loop=self.bot.loop)
+    #         ctx.voice_client.play(player, after=lambda e: print('Player error: %s' % e) if e else None)
+    #
+    #     await ctx.send('Now playing: {}'.format(player.title))
 
     @commands.command(name="play", help="play music as stream")
     async def play(self, ctx, *, url):
         """Streams from a url (same as yt, but doesn't predownload)"""
 
-        async with ctx.typing():
-            player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
-            ctx.voice_client.play(player, after=lambda e: print('Player error: %s' % e) if e else None)
+        async with ctx.typing():    # display "The bot is typing..."
+            if self.queue.qsize() == 0:
+                player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
+                await self.queue.put(player)
+
+            while(self.queue.empty() == False):
+                player = self.queue.get_nowait()
+                await ctx.send(player.title)
+                ctx.voice_client.play(player, after=lambda e: print('Player error: %s' % e) if e else None)
 
         await ctx.send('Now playing: {}'.format(player.title))
 
     # @commands.command()
     # async def repaet(self, ctx, *, url):
+
+    @commands.command()
+    async def add(self, ctx, *, url):
+        """add a song to playlist"""
+
+        async with ctx.typing():
+            player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
+            await self.queue.put(player)
+
+        await ctx.send('Add song: {}'.format(player.title))
 
     @commands.command()
     async def volume(self, ctx, volume: int):
@@ -134,7 +151,7 @@ class Music(commands.Cog):
         await ctx.voice_client.disconnect()
 
     @play.before_invoke
-    @yt.before_invoke
+    #@yt.before_invoke
     #@stream.before_invoke
     async def ensure_voice(self, ctx):
         if ctx.voice_client is None:
