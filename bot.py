@@ -6,7 +6,7 @@ import os
 # contain bot features, like type, message, guild
 intents = discord.Intents().default()
 # connect to discord server and init bot command features
-bot = commands.Bot(command_prefix="op!", intents=intents)
+bot = commands.Bot(command_prefix="!", intents=intents)
 # Get the API token from the .env file.
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 
