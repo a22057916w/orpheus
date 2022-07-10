@@ -62,7 +62,7 @@ class Music(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.queue = queue.Queue()
+        self.queue = []
 
     @commands.command()
     async def join(self, ctx, *, channel: discord.VoiceChannel):
@@ -109,7 +109,7 @@ class Music(commands.Cog):
 
         async with ctx.typing():
             player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
-            self.queue.put(player)
+            self.queue.append(player)
 
         await ctx.send('Added audio: {} to playlist'.format(player.title))
 
@@ -118,16 +118,16 @@ class Music(commands.Cog):
         """start a playlist"""
 
         async with ctx.typing():
-            player = self.queue.get()
+            player = self.queue.pop(0)
             ctx.voice_client.play(player, after=lambda e: asyncio.run_coroutine_threadsafe(self.play_next(ctx), self.bot.loop))
 
         await ctx.send('Now playing: {}'.format(player.title))
 
 
     async def play_next(self, ctx):
-        if self.queue.qsize() > 0:
+        if len(self.queue) > 0:
             async with ctx.typing():
-                player = self.queue.get()
+                player = self.queue.pop(0)
                 ctx.voice_client.play(player, after=lambda e: asyncio.run_coroutine_threadsafe(self.play_next(ctx), self.bot.loop))
 
             await ctx.send('Now playing: {}'.format(player.title))
