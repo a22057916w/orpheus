@@ -62,7 +62,7 @@ class Music(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.queue = asyncio.Queue()
+        self.queue = queue.Queue()
 
     @commands.command()
     async def join(self, ctx, *, channel: discord.VoiceChannel):
@@ -109,9 +109,26 @@ class Music(commands.Cog):
 
         async with ctx.typing():
             player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
-            await self.queue.put(player)
+            self.queue.put(player)
 
         await ctx.send('Add song: {}'.format(player.title))
+
+    @commands.command()
+    async def play_list(self, ctx):
+
+        async with ctx.typing():
+            player = self.queue.get()
+            ctx.voice_client.play(player, after=lambda e: asyncio.run_coroutine_threadsafe(self.play_next(ctx), self.bot.loop))
+
+        await ctx.send('Now playing: {}'.format(player.title))
+
+    async def play_next(self, ctx):
+        if self.queue.qsize() > 0:
+            async with ctx.typing():
+                player = self.queue.get()
+                ctx.voice_client.play(player, after=lambda e: asyncio.run_coroutine_threadsafe(self.play_next(ctx), self.bot.loop))
+
+            await ctx.send('Now playing: {}'.format(player.title))
 
     @commands.command()
     async def volume(self, ctx, volume: int):
@@ -144,6 +161,7 @@ class Music(commands.Cog):
         await ctx.voice_client.disconnect()
 
     @play.before_invoke
+    @play_list.before_invoke
     #@yt.before_invoke
     #@stream.before_invoke
     async def ensure_voice(self, ctx):
