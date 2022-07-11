@@ -126,14 +126,7 @@ class Music(commands.Cog):
                 self.queue.append(url)
 
             player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
-
-            if self.loop == True:
-                self.queue.append(url)
-                
             ctx.voice_client.play(player, after=lambda e: asyncio.run_coroutine_threadsafe(self.play_next(ctx), self.bot.loop))
-
-            if self.loop == True:
-                self.queue.append(url)
 
         await ctx.send('Now playing: {}'.format(player.title))
 
@@ -148,9 +141,6 @@ class Music(commands.Cog):
 
                 player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
                 ctx.voice_client.play(player, after=lambda e: asyncio.run_coroutine_threadsafe(self.play_next(ctx), self.bot.loop))
-
-                if self.loop == True:
-                    self.queue.append(url)
 
             await ctx.send('Now playing: {}'.format(player.title))
 
