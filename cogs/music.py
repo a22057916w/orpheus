@@ -62,6 +62,8 @@ class Music(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+
+        self.loop = False
         self.queue = []
 
     @commands.command()
@@ -119,6 +121,10 @@ class Music(commands.Cog):
 
         async with ctx.typing():
             url = self.queue.pop(0)
+            
+            if self.loop == True:
+                self.queue.append(url)
+
             player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
             ctx.voice_client.play(player, after=lambda e: asyncio.run_coroutine_threadsafe(self.play_next(ctx), self.bot.loop))
 
@@ -129,6 +135,10 @@ class Music(commands.Cog):
         if len(self.queue) > 0:
             async with ctx.typing():
                 url = self.queue.pop(0)
+
+                if self.loop == True:
+                    self.queue.append(url)
+
                 player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
                 ctx.voice_client.play(player, after=lambda e: asyncio.run_coroutine_threadsafe(self.play_next(ctx), self.bot.loop))
 
@@ -141,6 +151,17 @@ class Music(commands.Cog):
             songs.append(url)
 
         await ctx.send(songs)
+
+    @commands.command(name="loop", help="Loop the playlist")
+    async def loop_(self, ctx):
+
+        async with ctx.typing():
+            if self.loop == True:
+                self.loop = False
+                await ctx.send("Loop the playlist")
+            else:
+                self.loop = True
+                await ctx.send("Unloop the playlist")
 
     @commands.command()
     async def volume(self, ctx, volume: int):
