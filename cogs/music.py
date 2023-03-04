@@ -11,7 +11,7 @@ from discord.ext import commands
 # Suppress noise about console usage from errors
 youtube_dl.utils.bug_reports_message = lambda: ''
 
-
+# 設定音樂下載和轉換的參數
 ytdl_format_options = {
     'format': 'bestaudio/best',
     'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
@@ -25,11 +25,11 @@ ytdl_format_options = {
     'default_search': 'auto',
     'source_address': '0.0.0.0' # bind to ipv4 since ipv6 addresses cause issues sometimes
 }
-
 ffmpeg_options = {
     'options': '-vn'
 }
 
+# 建立音樂下載器
 ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
 
 # If you turn up Master volume, everything gets louder...headphones, CD, etc. PCM turns up the volume just for sound files,
@@ -58,8 +58,6 @@ class YTDLSource(discord.PCMVolumeTransformer):
 
 
 class Music(commands.Cog):
-
-
     def __init__(self, bot):
         self.bot = bot
 
@@ -74,25 +72,6 @@ class Music(commands.Cog):
             return await ctx.voice_client.move_to(channel)
 
         await channel.connect()
-
-    # @commands.command()
-    # async def play(self, ctx, *, query):
-    #     """Plays a file from the local filesystem"""
-    #
-    #     source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(query))
-    #     ctx.voice_client.play(source, after=lambda e: print('Player error: %s' % e) if e else None)
-    #
-    #     await ctx.send('Now playing: {}'.format(query))
-
-    # @commands.command()
-    # async def yt(self, ctx, *, url):
-    #     """Plays from a url (almost anything youtube_dl supports)"""
-    #
-    #     async with ctx.typing():    # display "The bot is typing..."
-    #         player = await YTDLSource.from_url(url, loop=self.bot.loop)
-    #         ctx.voice_client.play(player, after=lambda e: print('Player error: %s' % e) if e else None)
-    #
-    #     await ctx.send('Now playing: {}'.format(player.title))
 
     @commands.command(name="play", help="Play music as stream")
     async def play(self, ctx, *, url):
