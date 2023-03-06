@@ -61,7 +61,7 @@ class Music(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-        self.loop = False
+        # self.loop = False
         self.queue = []
 
     @commands.command()
@@ -73,74 +73,62 @@ class Music(commands.Cog):
 
         await channel.connect()
 
-    @commands.command(name="play", help="Play music as stream")
+
     async def play(self, ctx, *, url):
         """Streams from a url (same as yt, but doesn't predownload)"""
 
+        if not queue:
+            return
+
+        url = queue[0]
+
         async with ctx.typing():
             player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
-            ctx.voice_client.play(player, after=lambda e: print('Player error: %s' % e) if e else None)
-
+            #ctx.voice_client.play(player, after=lambda e: print('Player error: %s' % e) if e else None)
+            ctx.voice_client.play(player, after=lambda e: queue.pop(0))
         await ctx.send('Now playing: {}'.format(player.title))
 
+    @commands.command(name="play", help="Play music as stream")
+    async def play_command(self, ctx, *, url):
+        # 加入到播放队列中
+        queue.append(url)
 
-    @commands.command(help="Add a audio to playlist")
-    async def add(self, ctx, *, url):
-        """add a audio to playlist"""
+        #如果没有歌曲在播放，开始播放
+        if len(queue) >= 1:
+            await play(ctx)
 
-        async with ctx.typing():
-            player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
-            self.queue.append(url)
+    # @commands.command(help="Add a audio to playlist")
+    # async def add(self, ctx, *, url):
+    #     """add a audio to playlist"""
+    #
+    #     async with ctx.typing():
+    #         player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
+    #         self.queue.append(url)
+    #
+    #     await ctx.send('Added audio: {} to playlist'.format(player.title))
 
-        await ctx.send('Added audio: {} to playlist'.format(player.title))
+    # @commands.command(help="Start a playlist")
+    # async def play_list(self, ctx):
+    #     """start the playlist"""
+    #
+    #     async with ctx.typing():
+    #         url = self.queue.pop(0)
+    #
+    #         if self.loop == True:
+    #             self.queue.append(url)
+    #
+    #         player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
+    #         ctx.voice_client.play(player, after=lambda e: asyncio.run_coroutine_threadsafe(self.play_next(ctx), self.bot.loop))
+    #
+    #     await ctx.send('Now playing: {}'.format(player.title))
 
-    @commands.command(help="Start a playlist")
-    async def play_list(self, ctx):
-        """start the playlist"""
-
-        async with ctx.typing():
-            url = self.queue.pop(0)
-
-            if self.loop == True:
-                self.queue.append(url)
-
-            player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
-            ctx.voice_client.play(player, after=lambda e: asyncio.run_coroutine_threadsafe(self.play_next(ctx), self.bot.loop))
-
-        await ctx.send('Now playing: {}'.format(player.title))
-
-
-    async def play_next(self, ctx):
-        if len(self.queue) > 0:
-            async with ctx.typing():
-                url = self.queue.pop(0)
-
-                if self.loop == True:
-                    self.queue.append(url)
-
-                player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
-                ctx.voice_client.play(player, after=lambda e: asyncio.run_coroutine_threadsafe(self.play_next(ctx), self.bot.loop))
-
-            await ctx.send('Now playing: {}'.format(player.title))
-
-    @commands.command(name="queue", help="Check the playlist")
-    async def queue_(self, ctx):
-        songs = []
-        for url in self.queue:
-            songs.append(url)
-
-        await ctx.send(songs)
-
-    @commands.command(name="loop", help="Loop the playlist")
-    async def loop_(self, ctx):
-
-        async with ctx.typing():
-            if self.loop == True:
-                self.loop = False
-                await ctx.send("Unloop the playlist")
-            else:
-                self.loop = True
-                await ctx.send("Loop the playlist")
+    # @commands.command(name="queue", help="Check the playlist")
+    # async def queue_(self, ctx):
+    #     songs = []
+    #     for url in self.queue:
+    #         songs.append(url)
+    #
+    #     await ctx.send(songs)
 
     @commands.command()
     async def volume(self, ctx, volume: int):
@@ -172,8 +160,8 @@ class Music(commands.Cog):
 
         await ctx.voice_client.disconnect()
 
-    @play.before_invoke
-    @play_list.before_invoke
+    @play_command.before_invoke
+    #@play_list.before_invoke
     #@yt.before_invoke
     #@stream.before_invoke
     async def ensure_voice(self, ctx):
