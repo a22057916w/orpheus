@@ -73,6 +73,7 @@ class Music(commands.Cog):
 
         await channel.connect()
 
+<<<<<<< HEAD
     @commands.command(name="play", help="Play music as stream")
     async def play(self, ctx, *, url):
         """Streams from a url (same as yt, but doesn't predownload)"""
@@ -96,6 +97,31 @@ class Music(commands.Cog):
     #     #如果没有歌曲在播放，开始播放
     #     if len(self.queue) >= 1:
     #         await self.play(ctx)
+=======
+
+    async def play(self, ctx, *, url):
+        """Streams from a url (same as yt, but doesn't predownload)"""
+
+        if not queue:
+            return
+
+        url = queue[0]
+
+        async with ctx.typing():
+            player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
+            #ctx.voice_client.play(player, after=lambda e: print('Player error: %s' % e) if e else None)
+            ctx.voice_client.play(player, after=lambda e: queue.pop(0))
+        await ctx.send('Now playing: {}'.format(player.title))
+
+    @commands.command(name="play", help="Play music as stream")
+    async def play_command(self, ctx, *, url):
+        # 加入到播放队列中
+        queue.append(url)
+
+        #如果没有歌曲在播放，开始播放
+        if len(queue) >= 1:
+            await play(ctx)
+>>>>>>> parent of c94d4ce (fix play() and play_command())
 
     # @commands.command(help="Add a audio to playlist")
     # async def add(self, ctx, *, url):
