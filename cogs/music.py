@@ -1,5 +1,4 @@
 import os
-import queue
 import asyncio
 
 import discord
@@ -74,28 +73,28 @@ class Music(commands.Cog):
         await channel.connect()
 
 
-    async def play(self, ctx, *, url):
+    async def play(self, ctx):
         """Streams from a url (same as yt, but doesn't predownload)"""
 
-        if not queue:
+        if not self.queue:
             return
 
-        url = queue[0]
+        url = self.queue[0]
 
         async with ctx.typing():
             player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
             #ctx.voice_client.play(player, after=lambda e: print('Player error: %s' % e) if e else None)
-            ctx.voice_client.play(player, after=lambda e: queue.pop(0))
+            ctx.voice_client.play(player, after=lambda e: self.queue.pop(0))
         await ctx.send('Now playing: {}'.format(player.title))
 
     @commands.command(name="play", help="Play music as stream")
     async def play_command(self, ctx, *, url):
         # 加入到播放队列中
-        queue.append(url)
+        self.queue.append(url)
 
         #如果没有歌曲在播放，开始播放
-        if len(queue) >= 1:
-            await play(ctx)
+        if len(self.queue) >= 1:
+            await self.play(ctx)
 
     # @commands.command(help="Add a audio to playlist")
     # async def add(self, ctx, *, url):
