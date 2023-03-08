@@ -159,8 +159,8 @@ class Music(commands.Cog):
         """Stops and disconnects the bot from voice"""
 
         await ctx.voice_client.disconnect()
-    @play.before_invoke
-    #@play_command.before_invoke
+
+    @play_command.before_invoke
     #@play_list.before_invoke
     #@yt.before_invoke
     #@stream.before_invoke
