@@ -82,40 +82,6 @@ class Music(commands.Cog):
             ctx.voice_client.play(player, after=lambda e: print('Player error: %s' % e) if e else None)
         await ctx.send('Now playing: {}'.format(player.title))
 
-
-    # @commands.command(help="Add a audio to playlist")
-    # async def add(self, ctx, *, url):
-    #     """add a audio to playlist"""
-    #
-    #     async with ctx.typing():
-    #         player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
-    #         self.queue.append(url)
-    #
-    #     await ctx.send('Added audio: {} to playlist'.format(player.title))
-
-    # @commands.command(help="Start a playlist")
-    # async def play_list(self, ctx):
-    #     """start the playlist"""
-    #
-    #     async with ctx.typing():
-    #         url = self.queue.pop(0)
-    #
-    #         if self.loop == True:
-    #             self.queue.append(url)
-    #
-    #         player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
-    #         ctx.voice_client.play(player, after=lambda e: asyncio.run_coroutine_threadsafe(self.play_next(ctx), self.bot.loop))
-    #
-    #     await ctx.send('Now playing: {}'.format(player.title))
-
-    # @commands.command(name="queue", help="Check the playlist")
-    # async def queue_(self, ctx):
-    #     songs = []
-    #     for url in self.queue:
-    #         songs.append(url)
-    #
-    #     await ctx.send(songs)
-
     @commands.command()
     async def volume(self, ctx, volume: int):
         """Changes the player's volume"""
