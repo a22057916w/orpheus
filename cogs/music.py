@@ -57,12 +57,13 @@ class YTDLSource(discord.PCMVolumeTransformer):
         return cls(discord.FFmpegPCMAudio(filename, **ffmpeg_options), data=data)
 
 class MusicPlayer:
-    def __init__(self, ctx):
-        self.bot = ctx.Bot
+    def __init__(self, bot, ctx):
+        self.bot = bot
+        self.ctx = ctx
         self.queue = asyncio.Queue()
         self.next = asyncio.Event()
 
-        ctx.bot.loop.create_task(self.player_loop())
+        bot.loop.create_task(self.player_loop())
 
     async def player_loop(self):
         """ main player loop """
@@ -78,7 +79,7 @@ class MusicPlayer:
                 async with timeout(300):    # 5 minutes...
                     source = await self.queue.get()
             except asyncio.TimeoutError:
-                await ctx.voice_client.disconnect()
+                await self.ctx.voice_client.disconnect()
 
             if not isinstance(source, YTDLSource):
                 # Source was probably a stream (not downloaded)
@@ -90,8 +91,8 @@ class MusicPlayer:
                                              f'```css\n[{e}]\n```')
                     continue
 
-                ctx.voice_client.play(source, after=lambda _: self.bot.loop.call_soon_threadsafe(self.next.set))
-                await ctx.send('Now playing: {}'.format(source.title))
+                self.ctx.voice_client.play(source, after=lambda _: self.bot.loop.call_soon_threadsafe(self.next.set))
+                await self.ctx.send('Now playing: {}'.format(source.title))
 
                 await self.next.wait()
 
@@ -118,7 +119,7 @@ class Music(commands.Cog):
     async def play(self, ctx, *, url):
         """Streams from a url (same as yt, but doesn't predownload)"""
 
-        player = MusicPlayer(ctx)
+        player = MusicPlayer(self.bot, ctx)
 
         # If download is False, source will be a dict which will be used later to regather the stream.
         # If download is True, source will be a discord.FFmpegPCMAudio with a VolumeTransformer.
