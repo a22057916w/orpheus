@@ -105,9 +105,16 @@ class MusicPlayer:
 class Music(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.players = {}
 
-        # self.loop = False
-        self.queue = []
+    def get_player(self, ctx):
+        """Retrieve the guild player, or generate one."""
+        try:
+            player = self.players[ctx.guild.id]
+        except KeyError:
+            player = MusicPlayer(self.bot, ctx)
+            self.players[ctx.guild.id] = player
+        return player
 
     @commands.command()
     async def join(self, ctx, *, channel: discord.VoiceChannel):
@@ -122,7 +129,7 @@ class Music(commands.Cog):
     async def play(self, ctx, *, url):
         """Streams from a url (same as yt, but doesn't predownload)"""
 
-        player = MusicPlayer(self.bot, ctx)
+        player = self.get_player(ctx)
 
         # If download is False, source will be a dict which will be used later to regather the stream.
         # If download is True, source will be a discord.FFmpegPCMAudio with a VolumeTransformer.
