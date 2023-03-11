@@ -94,13 +94,13 @@ class MusicPlayer:
                                              f'```css\n[{e}]\n```')
                     continue
 
-                self.ctx.voice_client.play(source, after=lambda _: self.bot.loop.call_soon_threadsafe(self.next.set))
-                await self.ctx.send('Now playing: {}'.format(source.title))
+            self.ctx.voice_client.play(source, after=lambda _: self.bot.loop.call_soon_threadsafe(self.next.set))
+            await self.ctx.send('Now playing: {}'.format(source.title))
 
-                await self.next.wait()
+            await self.next.wait()
 
-                # Make sure the FFmpeg process is cleaned up.
-                source.cleanup()
+            # Make sure the FFmpeg process is cleaned up.
+            source.cleanup()
 
 class Music(commands.Cog):
     def __init__(self, bot):
