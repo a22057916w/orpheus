@@ -1,10 +1,13 @@
+import discord
+from discord.ext import commands
+
 import os
 import asyncio
+from async_timeout import timeout
 
-import discord
 import youtube_dl
 
-from discord.ext import commands
+
 
 
 # Suppress noise about console usage from errors
