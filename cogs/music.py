@@ -63,6 +63,7 @@ class MusicPlayer:
     def __init__(self, bot, ctx):
         self.bot = bot
         self.ctx = ctx
+
         self.queue = asyncio.Queue()
         self.next = asyncio.Event()
 
@@ -82,7 +83,7 @@ class MusicPlayer:
                 async with timeout(300):    # 5 minutes...
                     source = await self.queue.get()
             except asyncio.TimeoutError:
-                await self.ctx.voice_client.disconnect()
+                return self.destroy(self.ctx.guild)
 
             if not isinstance(source, YTDLSource):
                 # Source was probably a stream (not downloaded)
@@ -94,6 +95,7 @@ class MusicPlayer:
                                              f'```css\n[{e}]\n```')
                     continue
 
+
             self.ctx.voice_client.play(source, after=lambda _: self.bot.loop.call_soon_threadsafe(self.next.set))
             await self.ctx.send('Now playing: {}'.format(source.title))
 
@@ -102,10 +104,26 @@ class MusicPlayer:
             # Make sure the FFmpeg process is cleaned up.
             source.cleanup()
 
+    def destroy(self, guild):
+         """Disconnect and cleanup the player."""
+         return self.bot.loop.create_task(self.ctx.cog.cleanup(guild))
+
+
 class Music(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.players = {}
+
+    async def cleanup(self, guild):
+        try:
+            await guild.voice_client.disconnect()
+        except AttributeError:
+            pass
+
+        try:
+            del self.players[guild.id]
+        except KeyError:
+            pass
 
     def get_player(self, ctx):
         """Retrieve the guild player, or generate one."""
