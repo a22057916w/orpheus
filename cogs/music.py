@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 
 import os
+import logging
 import asyncio
 from async_timeout import timeout
 
@@ -201,6 +202,32 @@ class Music(commands.Cog):
             else:
                 await ctx.send("You are not connected to a voice channel.")
                 raise commands.CommandError("Author not connected to a voice channel.")
+
+
+def setup_logger(name, log_file, level=logging.INFO):
+    """Function setup as many loggers as you want"""
+
+    fh = logging.FileHandler(log_file)
+    fh.setLevel(logging.INFO)
+    formatter = logging.Formatter('[%(asctime)s][%(levelname)-5s][%(lineno)-3d][%(funcName)s] %(message)s', datefmt='%Y/%m/%d %H:%M:%S')
+    fh.setFormatter(formatter)
+
+    # define a Handler which writes INFO messages or higher to the sys.stderr
+    ch = logging.StreamHandler(sys.stdout)
+    # ch = logging.StreamHandler()
+    ch.setLevel(logging.INFO)
+
+    # set a format which is simpler for console use
+    formatter = logging.Formatter('%(levelname)-5s - %(lineno)-4d - %(funcName)s : %(message)s')
+    # tell the handler to use this format
+    ch.setFormatter(formatter)
+
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+    logger.addHandler(fh)
+    logger.addHandler(ch)
+
+    return logger
 
 # bot = commands.Bot(command_prefix=commands.when_mentioned_or("!"),
 #                    description='Relatively simple music bot example')
