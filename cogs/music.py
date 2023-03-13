@@ -2,6 +2,8 @@ import discord
 from discord.ext import commands
 
 import os
+import codecs
+import time
 import logging
 import asyncio
 from async_timeout import timeout
@@ -112,6 +114,9 @@ class MusicPlayer:
 
 class Music(commands.Cog):
     def __init__(self, bot):
+        setupLogPath()
+        printLog("[I][Music.__init__] %s.py " % (os.path.basename(__file__).split('.')[0]))
+
         self.bot = bot
         self.players = {}
 
@@ -203,31 +208,49 @@ class Music(commands.Cog):
                 await ctx.send("You are not connected to a voice channel.")
                 raise commands.CommandError("Author not connected to a voice channel.")
 
+def setupLogPath():
+    global g_logFileName
 
-def setup_logger(name, log_file, level=logging.INFO):
-    """Function setup as many loggers as you want"""
+    parentDir = os.path.join(os.getcwd(), os.pardir)
+    logDir = parentDir + "/log"
+    if not os.path.exists(logDir):
+        os.makedirs(logDir)
+    g_logFileName = os.path.join(logDir, (os.path.basename(__file__)[:-3] + ".log"))
 
-    fh = logging.FileHandler(log_file)
-    fh.setLevel(logging.INFO)
-    formatter = logging.Formatter('[%(asctime)s][%(levelname)-5s][%(lineno)-3d][%(funcName)s] %(message)s', datefmt='%Y/%m/%d %H:%M:%S')
-    fh.setFormatter(formatter)
+def getDateTimeFormat():
+    strDateTime = "[%s]" % (time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()))
+    return strDateTime
 
-    # define a Handler which writes INFO messages or higher to the sys.stderr
-    ch = logging.StreamHandler(sys.stdout)
-    # ch = logging.StreamHandler()
-    ch.setLevel(logging.INFO)
+def printLog(strPrintLine):
+    fileLog = codecs.open(g_logFileName, 'a', "utf-8")
+    print(strPrintLine)
+    fileLog.write("%s%s\r\n" % (getDateTimeFormat(), strPrintLine))
+    fileLog.close()
 
-    # set a format which is simpler for console use
-    formatter = logging.Formatter('%(levelname)-5s - %(lineno)-4d - %(funcName)s : %(message)s')
-    # tell the handler to use this format
-    ch.setFormatter(formatter)
-
-    logger = logging.getLogger(name)
-    logger.setLevel(level)
-    logger.addHandler(fh)
-    logger.addHandler(ch)
-
-    return logger
+# def setup_logger(name, log_file, level=logging.INFO):
+#     """Function setup as many loggers as you want"""
+#
+#     fh = logging.FileHandler(log_file)
+#     fh.setLevel(logging.INFO)
+#     formatter = logging.Formatter('[%(asctime)s][%(levelname)-5s][%(lineno)-3d][%(funcName)s] %(message)s', datefmt='%Y/%m/%d %H:%M:%S')
+#     fh.setFormatter(formatter)
+#
+#     # define a Handler which writes INFO messages or higher to the sys.stderr
+#     ch = logging.StreamHandler(sys.stdout)
+#     # ch = logging.StreamHandler()
+#     ch.setLevel(logging.INFO)
+#
+#     # set a format which is simpler for console use
+#     formatter = logging.Formatter('%(levelname)-5s - %(lineno)-4d - %(funcName)s : %(message)s')
+#     # tell the handler to use this format
+#     ch.setFormatter(formatter)
+#
+#     logger = logging.getLogger(name)
+#     logger.setLevel(level)
+#     logger.addHandler(fh)
+#     logger.addHandler(ch)
+#
+#     return logger
 
 # bot = commands.Bot(command_prefix=commands.when_mentioned_or("!"),
 #                    description='Relatively simple music bot example')
