@@ -79,6 +79,7 @@ class MusicPlayer:
         await self.bot.wait_until_ready()
 
         while not self.bot.is_closed():
+            # mark the event as not set
             self.next.clear()
 
             try:
@@ -99,9 +100,10 @@ class MusicPlayer:
                     continue
 
 
-            self.ctx.voice_client.play(source, after=lambda _: self.bot.loop.call_soon_threadsafe(self.next.set))
+            self.ctx.voice_client.play(source, after=lambda _: self.bot.loop.call_soon_threadsafe(self.next.set))   # set the event avalible after the song
             await self.ctx.send('Now playing: {}'.format(source.title))
 
+            # wait for the event to be set
             await self.next.wait()
 
             # Make sure the FFmpeg process is cleaned up.
