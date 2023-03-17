@@ -99,8 +99,8 @@ class MusicPlayer:
                                              f'```css\n[{e}]\n```')
                     continue
 
-
-            self.ctx.voice_client.play(source, after=lambda _: self.bot.loop.call_soon_threadsafe(self.next.set))   # set the event avalible after the song
+            async with self.ctx.typing():
+                self.ctx.voice_client.play(source, after=lambda _: self.bot.loop.call_soon_threadsafe(self.next.set))   # set the event avalible after the song
             await self.ctx.send('Now playing: {}'.format(source.title))
 
             # wait for the event to be set
