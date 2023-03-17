@@ -133,6 +133,13 @@ class Music(commands.Cog):
         except KeyError:
             pass
 
+    async def ensure_voice(self, ctx):
+        if ctx.author.voice:
+            await ctx.author.voice.channel.connect()
+        else:
+            await ctx.send("You are not connected to a voice channel.")
+            raise commands.CommandError("Author not connected to a voice channel.")
+
     def get_player(self, ctx):
         """Retrieve the guild player, or generate one."""
         try:
@@ -154,6 +161,9 @@ class Music(commands.Cog):
     @commands.command(name="play", help="Play music as stream")
     async def play(self, ctx, *, url):
         """Streams from a url (same as yt, but doesn't predownload)"""
+
+        if not ctx.voice_client:
+            await self.ensure_voice(ctx)
 
         player = self.get_player(ctx)
 
@@ -195,20 +205,9 @@ class Music(commands.Cog):
     @commands.command()
     async def stop(self, ctx):
         """Stops and disconnects the bot from voice"""
-
         await ctx.voice_client.disconnect()
 
-    @play.before_invoke
-    #@play_list.before_invoke
-    #@yt.before_invoke
-    #@stream.before_invoke
-    async def ensure_voice(self, ctx):
-        if ctx.voice_client is None:
-            if ctx.author.voice:
-                await ctx.author.voice.channel.connect()
-            else:
-                await ctx.send("You are not connected to a voice channel.")
-                raise commands.CommandError("Author not connected to a voice channel.")
+
 
 def setupLogPath():
     global g_logFileName
