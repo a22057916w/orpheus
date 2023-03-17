@@ -62,6 +62,19 @@ class YTDLSource(discord.PCMVolumeTransformer):
         filename = data['url'] if stream else ytdl.prepare_filename(data)
         return cls(discord.FFmpegPCMAudio(filename, **ffmpeg_options), data=data)
 
+    @classmethod
+    async def regather_stream(cls, data, *, loop):
+        """Used for preparing a stream, instead of downloading.
+        Since Youtube Streaming links expire."""
+        loop = loop or asyncio.get_event_loop()
+        requester = data['requester']
+
+        to_run = partial(ytdl.extract_info, url=data['webpage_url'], download=False)
+        data = await loop.run_in_executor(None, to_run)
+
+        return cls(discord.FFmpegPCMAudio(data['url']), data=data, requester=requester)
+
+
 class MusicPlayer:
     def __init__(self, bot, ctx):
         self.bot = bot
@@ -93,7 +106,7 @@ class MusicPlayer:
                 # Source was probably a stream (not downloaded)
                 # So we should regather to prevent stream expiration
                 try:
-                    source = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
+                    source = await YTDLSource.regather_stream(source, loop=self.bot.loop)
                 except Exception as e:
                     await ctx.send(f'There was an error processing your song.\n'
                                              f'```css\n[{e}]\n```')
@@ -173,10 +186,6 @@ class Music(commands.Cog):
 
         await player.queue.put(source)
 
-        # async with ctx.typing():
-        #     player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
-        #     ctx.voice_client.play(player, after=lambda e: print('Player error: %s' % e) if e else None)
-        # await ctx.send('Now playing: {}'.format(player.title))
 
     @commands.command()
     async def volume(self, ctx, volume: int):
