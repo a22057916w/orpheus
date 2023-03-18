@@ -4,6 +4,7 @@ from discord.ext import commands
 import os
 import codecs
 import time
+import json
 import logging
 import asyncio
 from async_timeout import timeout
@@ -52,10 +53,16 @@ class YTDLSource(discord.PCMVolumeTransformer):
     # The method takes in the URL as a parameter and returns the filename of the audio file which gets downloaded.
     @classmethod    # 一般函數的第一個參數指的是該物件的記憶體位置，classmethod的第一個參數指的是該類別的記憶體位置。用法類似static method
     async def from_url(cls, url, *, loop=None, stream=False):
+        print("09000000")
         loop = loop or asyncio.get_event_loop()
+        print("09000000")
         data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=not stream))
-
+        print("09000000")
+        with open(os.path.join(os.getcwd(), "test.json"), 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2, sort_keys=True, ensure_ascii=False)
+        print("1223424232")
         if 'entries' in data:
+            print("sdfsdfsdf")
             # take first item from a playlist
             data = data['entries'][0]
 
