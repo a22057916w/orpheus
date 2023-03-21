@@ -181,6 +181,7 @@ class Music(commands.Cog):
         except Exception as e:
             printLog("[check_source][E] Unexcepted Error : %s", e)
 
+
     def parse_youtube_url(self, url):
         match = re.search("list=\w+", url)
         if not match:
@@ -188,7 +189,10 @@ class Music(commands.Cog):
         else:
             return url.split(match)[0] + match
 
-
+    def isPlaylist(self, url):
+        if self.url_source = _YOUTUBE_:
+            match = re.search("list=\w+", url)
+            return False if not match else True 
 
     @commands.command()
     async def join(self, ctx, *, channel: discord.VoiceChannel):
@@ -248,11 +252,6 @@ class Music(commands.Cog):
         """Stops and disconnects the bot from voice"""
         await ctx.voice_client.disconnect()
 
-
-    def isPlaylist(self, url):
-        if self.url_source = _YOUTUBE_:
-            match = re.search("list=\w+", url)
-            return False if not match else True
 
 
 def setupLogPath():
