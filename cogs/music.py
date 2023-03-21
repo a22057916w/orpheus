@@ -141,7 +141,7 @@ class Music(commands.Cog):
         printLog("[I][Music.__init__] %s.py " % (os.path.basename(__file__).split('.')[0]))
 
         self.bot = bot
-        self.url_source = None # set in parse_url
+        self.url_source = None # set in check_source
         self.players = {}
 
     async def cleanup(self, guild):
@@ -171,15 +171,15 @@ class Music(commands.Cog):
             self.players[ctx.guild.id] = player
         return player
 
-    def parse_url(self, url):
+    def check_source(self, url):
         """check the url source"""
         ytl = r'https://www.youtube.com.*'
         try:
             if re.fullmathch(ytl, url):
-                self.url_source = _YOUTUBE
-                return _YOUTUBE
+                self.url_source = _YOUTUBE_
+                return _YOUTUBE_
         except Exception as e:
-            printLog("[parse_url][E] Unexcepted Error : %s", e)
+            printLog("[check_source][E] Unexcepted Error : %s", e)
 
     def parse_youtube_url(self, url):
         match = re.search("list=\w+", url)
@@ -206,8 +206,8 @@ class Music(commands.Cog):
         if not ctx.voice_client:
             await self.ensure_voice(ctx)
 
-        self.parse_url(url)
-        if self.url_source = _YOUTUBE:
+        self.check_source(url)
+        if self.url_source = _YOUTUBE_:
             url = parse_youtube_url(url)
 
         player = self.get_player(ctx)
@@ -250,9 +250,9 @@ class Music(commands.Cog):
 
 
     def isPlaylist(self, url):
-        if self.url_source = _YOUTUBE:
+        if self.url_source = _YOUTUBE_:
             match = re.search("list=\w+", url)
-            return False if not match else True 
+            return False if not match else True
 
 
 def setupLogPath():
