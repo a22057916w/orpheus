@@ -5,6 +5,7 @@ import os
 import codecs
 import time
 import json
+
 import logging
 import asyncio
 from async_timeout import timeout
@@ -12,7 +13,7 @@ from async_timeout import timeout
 import youtube_dl
 
 
-
+_YOUTUBE = "youtube"
 
 # Suppress noise about console usage from errors
 youtube_dl.utils.bug_reports_message = lambda: ''
@@ -140,6 +141,7 @@ class Music(commands.Cog):
         printLog("[I][Music.__init__] %s.py " % (os.path.basename(__file__).split('.')[0]))
 
         self.bot = bot
+        self.url_source = None # set in parse_url
         self.players = {}
 
     async def cleanup(self, guild):
@@ -169,6 +171,23 @@ class Music(commands.Cog):
             self.players[ctx.guild.id] = player
         return player
 
+    def parse_url(self, url):
+        """check the url source"""
+        ytl = r'https://www.youtube.com.*'
+        try:
+            if re.fullmathch(ytl, url):
+                self.url_source = _YOUTUBE
+                return _YOUTUBE
+        except Exception as e:
+            printLog("[parse_url][E] Unexcepted Error : %s", e)
+
+    def parse_youtube_url(self, url):
+        match = re.search("list=\w+", url)
+        if not match:
+            return url
+        else:
+            return url.split(match)[0] + match
+
     @commands.command()
     async def join(self, ctx, *, channel: discord.VoiceChannel):
         """Joins a voice channel"""
@@ -184,6 +203,10 @@ class Music(commands.Cog):
 
         if not ctx.voice_client:
             await self.ensure_voice(ctx)
+
+        self.parse_url(url)
+        if self.url_source = _YOUTUBE:
+            url = parse_youtube_url(url)
 
         player = self.get_player(ctx)
 
