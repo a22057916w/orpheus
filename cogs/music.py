@@ -5,6 +5,7 @@ import os
 import codecs
 import time
 import json
+import re
 
 import logging
 import asyncio
@@ -13,7 +14,7 @@ from async_timeout import timeout
 import youtube_dl
 
 
-_YOUTUBE = "youtube"
+_YOUTUBE_ = "youtube"
 
 # Suppress noise about console usage from errors
 youtube_dl.utils.bug_reports_message = lambda: ''
@@ -175,11 +176,11 @@ class Music(commands.Cog):
         """check the url source"""
         ytl = r'https://www.youtube.com.*'
         try:
-            if re.fullmathch(ytl, url):
+            if re.fullmatch(ytl, url):
                 self.url_source = _YOUTUBE_
                 return _YOUTUBE_
         except Exception as e:
-            printLog("[check_source][E] Unexcepted Error : %s", e)
+            printLog("[check_source][E] Unexcepted Error : %s" % e)
 
 
     def parse_youtube_url(self, url):
@@ -189,10 +190,24 @@ class Music(commands.Cog):
         else:
             return url.split(match)[0] + match
 
-    def isPlaylist(self, url):
-        if self.url_source = _YOUTUBE_:
+    def is_playlist(self, url):
+        if self.url_source == _YOUTUBE_:
             match = re.search("list=\w+", url)
-            return False if not match else True 
+            return False if not match else True
+
+    async def get_playlist(self, url):
+        try:
+            if self.url_source == _YOUTUBE_:
+                source = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
+                print(type(source))
+                data = source.data
+                print(data.keys())
+                entries = data["entries"]
+                print(len(entries))
+                return None
+        except Exception as e:
+            printLog("[get_playlist][E] Unexcepted Error : %s" % e)
+
 
     @commands.command()
     async def join(self, ctx, *, channel: discord.VoiceChannel):
@@ -211,16 +226,18 @@ class Music(commands.Cog):
             await self.ensure_voice(ctx)
 
         self.check_source(url)
-        if self.url_source = _YOUTUBE_:
-            url = parse_youtube_url(url)
+        if self.url_source == _YOUTUBE_:
+            if self.is_playlist(url):
+                list = await self.get_playlist(url)
 
-        player = self.get_player(ctx)
 
-        # If download is False, source will be a dict which will be used later to regather the stream.
-        # If download is True, source will be a discord.FFmpegPCMAudio with a VolumeTransformer.
-        source = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
-
-        await player.queue.put(source)
+        # player = self.get_player(ctx)
+        #
+        # # If download is False, source will be a dict which will be used later to regather the stream.
+        # # If download is True, source will be a discord.FFmpegPCMAudio with a VolumeTransformer.
+        # source = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
+        #
+        # await player.queue.put(source)
 
 
     @commands.command()
