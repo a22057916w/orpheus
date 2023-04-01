@@ -1,6 +1,9 @@
 import discord
 from discord.ext import commands
 
+import requests
+from bs4 import BeautifulSoup
+
 import os
 import codecs
 import time
@@ -55,18 +58,8 @@ class YTDLSource(discord.PCMVolumeTransformer):
     # The method takes in the URL as a parameter and returns the filename of the audio file which gets downloaded.
     @classmethod    # 一般函數的第一個參數指的是該物件的記憶體位置，classmethod的第一個參數指的是該類別的記憶體位置。用法類似static method
     async def from_url(cls, url, *, loop=None, stream=False):
-        print("09000000")
         loop = loop or asyncio.get_event_loop()
-        print("09000000")
         data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=not stream))
-        print("09000000")
-        with open(os.path.join(os.getcwd(), "test.json"), 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=2, sort_keys=True, ensure_ascii=False)
-        print("1223424232")
-        if 'entries' in data:
-            print("sdfsdfsdf")
-            # take first item from a playlist
-            data = data['entries'][0]
 
         filename = data['url'] if stream else ytdl.prepare_filename(data)
         return cls(discord.FFmpegPCMAudio(filename, **ffmpeg_options), data=data)
@@ -75,6 +68,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
     async def regather_stream(cls, data, *, loop):
         """Used for preparing a stream, instead of downloading.
         Since Youtube Streaming links expire."""
+
         loop = loop or asyncio.get_event_loop()
         requester = data['requester']
 
@@ -197,14 +191,27 @@ class Music(commands.Cog):
 
     async def get_playlist(self, url):
         try:
-            if self.url_source == _YOUTUBE_:
-                source = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
-                print(type(source))
-                data = source.data
-                print(data.keys())
-                entries = data["entries"]
-                print(len(entries))
-                return None
+            # oriinal url be like:
+            # https://www.youtube.com/watch?v=ouLndhBRL4w&list=PL1urwPG3M3NKahUbWDj_Y1qgwtRvhMpN7&index=6
+            url = "https://www.youtube.com/playlist?" + url.split("&")[1]
+            print(url)
+            # 發送 GET 請求取得網頁內容
+            response = requests.get(url)
+            html = response.text
+            with open("html.txt", "w", encoding="utf-8") as f:
+                f.write(html)
+            # 使用 BeautifulSoup 解析 HTML
+            soup = BeautifulSoup(html, 'html.parser')
+
+            # 找出所有影片連結所在的元素 by css selector
+            video_links = soup.select('a.yt-simple-endpoint.style-scope.ytd-playlist-video-renderer')
+            print("sdfsdf")
+            print(video_links)
+            # 印出每個影片的 URL
+            for link in video_links:
+                video_url = 'https://www.youtube.com' + link['href']
+                print(video_url)
+            print("sdfsdfsdf")
         except Exception as e:
             printLog("[get_playlist][E] Unexcepted Error : %s" % e)
 
@@ -225,19 +232,19 @@ class Music(commands.Cog):
         if not ctx.voice_client:
             await self.ensure_voice(ctx)
 
-        self.check_source(url)
-        if self.url_source == _YOUTUBE_:
-            if self.is_playlist(url):
-                list = await self.get_playlist(url)
+        # self.check_source(url)
+        # if self.url_source == _YOUTUBE_:
+        #     if self.is_playlist(url):
+        #         list = await self.get_playlist(url)  # to be opt
 
 
-        # player = self.get_player(ctx)
-        #
-        # # If download is False, source will be a dict which will be used later to regather the stream.
-        # # If download is True, source will be a discord.FFmpegPCMAudio with a VolumeTransformer.
-        # source = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
-        #
-        # await player.queue.put(source)
+        player = self.get_player(ctx)
+
+        # If download is False, source will be a dict which will be used later to regather the stream.
+        # If download is True, source will be a discord.FFmpegPCMAudio with a VolumeTransformer.
+        source = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
+
+        await player.queue.put(source)
 
 
     @commands.command()
