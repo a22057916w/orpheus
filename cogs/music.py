@@ -150,6 +150,7 @@ class Music(commands.Cog):
         except KeyError:
             pass
 
+    # !!! need to be review !!!
     async def ensure_voice(self, ctx):
         if ctx.author.voice:
             await ctx.author.voice.channel.connect()
