@@ -1,7 +1,8 @@
 import discord
 from discord.ext import commands
 
-import requests
+from selenium import webdriver
+from selenium.webdriver.firefox.options import Options
 from bs4 import BeautifulSoup
 
 import os
@@ -190,31 +191,43 @@ class Music(commands.Cog):
             match = re.search("list=\w+", url)
             return False if not match else True
 
-    async def get_playlist(self, url):
+    def get_playlist(self, url):
         try:
-            # oriinal url be like:
+            # 設定 Chrome 瀏覽器的選項
+            options = webdriver.ChromeOptions()
+            options.add_argument("--headless") # 不開啟瀏覽器視窗
+
+            # 建立 Chrome 瀏覽器物件
+            driver = webdriver.Chrome(options=options)
+
             # https://www.youtube.com/watch?v=ouLndhBRL4w&list=PL1urwPG3M3NKahUbWDj_Y1qgwtRvhMpN7&index=6
             url = "https://www.youtube.com/playlist?" + url.split("&")[1]
             print(url)
-            # 發送 GET 請求取得網頁內容
-            response = requests.get(url)
-            html = response.text
+
+            # 前往要爬取的網頁
+            driver.get(url)
+
+            # Render the dynamic content to static HTML
+            html = driver.page_source
+            # print(html)
+
             with open("html.txt", "w", encoding="utf-8") as f:
                 f.write(html)
-            # 使用 BeautifulSoup 解析 HTML
+
+            # Parse the static HTML
             soup = BeautifulSoup(html, 'html.parser')
 
             # 找出所有影片連結所在的元素 by css selector
             video_links = soup.select('a.yt-simple-endpoint.style-scope.ytd-playlist-video-renderer')
-            print("sdfsdf")
-            print(video_links)
+
+            video_url = []
             # 印出每個影片的 URL
             for link in video_links:
-                video_url = 'https://www.youtube.com' + link['href']
-                print(video_url)
-            print("sdfsdfsdf")
+                video_url.append('https://www.youtube.com' + link['href'])
+            return video_url
         except Exception as e:
             printLog("[get_playlist][E] Unexcepted Error : %s" % e)
+            return None
 
 
     @commands.command()
@@ -233,19 +246,23 @@ class Music(commands.Cog):
         if not ctx.voice_client:
             await self.ensure_voice(ctx)
 
-        # self.check_source(url)
-        # if self.url_source == _YOUTUBE_:
-        #     if self.is_playlist(url):
-        #         list = await self.get_playlist(url)  # to be opt
-
-
         player = self.get_player(ctx)
 
-        # If download is False, source will be a dict which will be used later to regather the stream.
-        # If download is True, source will be a discord.FFmpegPCMAudio with a VolumeTransformer.
-        source = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
+        self.check_source(url)
+        if self.url_source == _YOUTUBE_:
+            if self.is_playlist(url):
+                list = self.get_playlist(url)  # to be opt
 
-        await player.queue.put(source)
+                for i in range(len(list)):
+                    url = list[i]
+                    source = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
+                    await player.queue.put(source)
+            else:
+                # If download is False, source will be a dict which will be used later to regather the stream.
+                # If download is True, source will be a discord.FFmpegPCMAudio with a VolumeTransformer.
+                source = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
+
+                await player.queue.put(source)
 
 
     @commands.command()
