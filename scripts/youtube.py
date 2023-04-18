@@ -48,7 +48,7 @@ ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
 # If you turn up Master volume, everything gets louder...headphones, CD, etc. PCM turns up the volume just for sound files,
 # but CD volume would remain the same. Useful if you'd like MP3's to be louder than audio CD's.
 class YTDLSource(discord.PCMVolumeTransformer):
-    def __init__(self, source, *, data, volume=0.5):
+    def __init__(self, source, *, data, requester, volume=0.5):
         super().__init__(source, volume)
         self.requester = requester
 
@@ -73,7 +73,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
         data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=not stream))
 
         filename = data['url'] if stream else ytdl.prepare_filename(data)
-        return cls(discord.FFmpegPCMAudio(filename, **ffmpeg_options), data=data)
+        return cls(discord.FFmpegPCMAudio(filename, **ffmpeg_options), data=data, requester=ctx.author)
 
      @classmethod
      async def create_source(cls, ctx, search: str, *, loop, download=False):
@@ -106,4 +106,4 @@ class YTDLSource(discord.PCMVolumeTransformer):
         to_run = partial(ytdl.extract_info, url=data['webpage_url'], download=False)
         data = await loop.run_in_executor(None, to_run)
 
-        return cls(discord.FFmpegPCMAudio(data['url']), data=data, requester=requester)
+        return cls(discord.FFmpegPCMAudio(data['url'], **ffmpeg_options), data=data, requester=requester)
