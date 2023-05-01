@@ -318,5 +318,5 @@ def printLog(strPrintLine):
 
 # bot = commands.Bot(command_prefix=commands.when_mentioned_or("!"),
 #                    description='Relatively simple music bot example')
-def setup(bot):
-    bot.add_cog(Music(bot))
+async def setup(bot):
+    await bot.add_cog(Music(bot))

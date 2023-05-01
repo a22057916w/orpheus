@@ -13,5 +13,5 @@ class Status(commands.Cog):
         await self.bot.change_presence(activity=discord.Game(name="XML" ,emoji='🖥️'))
 
 
-def setup(bot):
-    bot.add_cog(Status(bot))
+async def setup(bot):
+    await bot.add_cog(Status(bot))

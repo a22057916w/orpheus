@@ -52,5 +52,5 @@ class Message(commands.Cog):
 
 # An extension must have a global function, setup defined as the entry point on what to do when the extension is loaded.
 # This entry point must have a single argument, the bot.
-def setup(bot):
-    bot.add_cog(Message(bot))
+async def setup(bot):
+    await bot.add_cog(Message(bot))
