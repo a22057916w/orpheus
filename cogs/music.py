@@ -133,9 +133,6 @@ class MusicPlayer:
 
 class Music(commands.Cog):
     def __init__(self, bot):
-        setupLogPath()
-        printLog("[I][Music.__init__] %s.py " % (os.path.basename(__file__).split('.')[0]))
-
         self.bot = bot
         self.url_source = None # set in check_source
         self.players = {}
@@ -294,26 +291,6 @@ class Music(commands.Cog):
         """Stops and disconnects the bot from voice"""
         await ctx.voice_client.disconnect()
 
-
-
-def setupLogPath():
-    global g_logFileName
-
-    parentDir = os.path.join(os.getcwd(), os.pardir)
-    logDir = parentDir + "/log"
-    if not os.path.exists(logDir):
-        os.makedirs(logDir)
-    g_logFileName = os.path.join(logDir, (os.path.basename(__file__)[:-3] + ".log"))
-
-def getDateTimeFormat():
-    strDateTime = "[%s]" % (time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()))
-    return strDateTime
-
-def printLog(strPrintLine):
-    fileLog = codecs.open(g_logFileName, 'a', "utf-8")
-    print(strPrintLine)
-    fileLog.write("%s%s\r\n" % (getDateTimeFormat(), strPrintLine))
-    fileLog.close()
 
 
 # bot = commands.Bot(command_prefix=commands.when_mentioned_or("!"),
