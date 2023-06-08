@@ -1,10 +1,6 @@
 import discord
 from discord.ext import commands
 
-from selenium import webdriver
-from selenium.webdriver.firefox.options import Options
-from bs4 import BeautifulSoup
-
 import os
 import codecs
 import time
@@ -16,7 +12,21 @@ import asyncio
 from async_timeout import timeout
 
 import youtube_dl
+from selenium import webdriver
+from selenium.webdriver.firefox.options import Options
+from bs4 import BeautifulSoup
 
+import spotipy
+from spotipy.oauth2 import SpotifyClientCredentials
+from spotipy.exceptions import SpotifyException
+import wavelink
+from wavelink.ext import spotify
+
+# 初始化 Spotify 客户端凭据
+spotify_client_id = '6d793485170f46749e32ce46ad3da004'
+spotify_client_secret = '214b8f17a448431a8ca1bde6c25e72be'
+# spotify_credentials = SpotifyClientCredentials(client_id=spotify_client_id, client_secret=spotify_client_secret)
+# spotify = spotipy.Spotify(client_credentials_manager=spotify_credentials)
 
 _YOUTUBE_ = "youtube"
 
@@ -261,6 +271,36 @@ class Music(commands.Cog):
 
                 await player.queue.put(source)
 
+    @commands.command()
+    async def plays(self, ctx, *, search) -> None:
+        """Simple play command that accepts a Spotify song URL.
+
+        This command enables AutoPlay. AutoPlay finds songs automatically when used with Spotify.
+        Tracks added to the Queue will be played in front (Before) of those added by AutoPlay.
+        """
+        await self.setup_hook()
+
+        if not ctx.voice_client:
+            vc: wavelink.Player = await ctx.author.voice.channel.connect(cls=wavelink.Player)
+        else:
+            vc: wavelink.Player = ctx.voice_client
+
+        # Check the search to see if it matches a valid Spotify URL...
+        decoded = spotify.decode_url(search)
+        if not decoded or decoded['type'] is not spotify.SpotifySearchType.track:
+            await ctx.send('Only Spotify Track URLs are valid.')
+            return
+
+        # Set autoplay to True. This can be disabled at anytime...
+        vc.autoplay = True
+        track = await spotify.SpotifyTrack.search(search)
+
+        # IF the player is not playing immediately play the song...
+        # otherwise put it in the queue...
+        if not vc.is_playing():
+            await vc.play(track, populate=True)
+        else:
+            await vc.queue.put_wait(track)
 
     @commands.command()
     async def volume(self, ctx, volume: int):
@@ -291,9 +331,16 @@ class Music(commands.Cog):
         """Stops and disconnects the bot from voice"""
         await ctx.voice_client.disconnect()
 
+    async def setup_hook(self) -> None:
+        # Wavelink 2.0 has made connecting Nodes easier... Simply create each Node
+        # and pass it to NodePool.connect with the client/bot.
+        # Fill your Spotify API details and pass it to connect.
+        sc = spotify.SpotifyClient(
+            client_id='6d793485170f46749e32ce46ad3da004',
+            client_secret='214b8f17a448431a8ca1bde6c25e72be'
+        )
+        node: wavelink.Node = wavelink.Node(uri='http://localhost:2333', password='youshallnotpass')
+        await wavelink.NodePool.connect(client=self.bot, nodes=[node], spotify=sc)
 
-
-# bot = commands.Bot(command_prefix=commands.when_mentioned_or("!"),
-#                    description='Relatively simple music bot example')
 async def setup(bot):
     await bot.add_cog(Music(bot))
