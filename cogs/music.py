@@ -339,7 +339,7 @@ class Music(commands.Cog):
             client_id='6d793485170f46749e32ce46ad3da004',
             client_secret='214b8f17a448431a8ca1bde6c25e72be'
         )
-        node: wavelink.Node = wavelink.Node(uri='http://localhost:2333', password='youshallnotpass')
+        node: wavelink.Node = wavelink.Node(uri='http://127.0.0.1:2333', password='youshallnotpass')
         await wavelink.NodePool.connect(client=self.bot, nodes=[node], spotify=sc)
 
 async def setup(bot):
