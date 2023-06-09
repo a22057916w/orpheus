@@ -9,13 +9,13 @@
 * [OpenJDK](https://jdk.java.net/archive/) or Zulu running on Linux AMD64 is officially supported.
 * [Lavalink.jar](https://github.com/lavalink-devs/Lavalink/releases)
 
-As APIs can undergo changes over time, please referring to the [Official Docs](https://github.com/lavalink-devs/Lavalink#requirements)
-
 ### Server Configuration
 To configure the server, you need to modify the `application.yml` file file by downloading it from [here](https://github.com/lavalink-devs/Lavalink/blob/master/LavalinkServer/application.yml.example). 
 
 Remember to update the **address** in the example configuration. Place the`application.yml` and `Lavalink.jar` in the working directory, usually located under the `/bin` directory in the extracted **OpenJDK**.(You have the flexibility to place the OpenJDK in your project directory or any desired location)
 
 Run with `java -jar Lavalink.jar` from the same directory.
+
+**As APIs can undergo changes over time, please referring to the [Official Docs](https://github.com/lavalink-devs/Lavalink#requirements)**
 
 
