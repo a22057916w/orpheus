@@ -278,7 +278,6 @@ class Music(commands.Cog):
         This command enables AutoPlay. AutoPlay finds songs automatically when used with Spotify.
         Tracks added to the Queue will be played in front (Before) of those added by AutoPlay.
         """
-        await self.setup_hook()
 
         if not ctx.voice_client:
             vc: wavelink.Player = await ctx.author.voice.channel.connect(cls=wavelink.Player)
@@ -331,16 +330,6 @@ class Music(commands.Cog):
         """Stops and disconnects the bot from voice"""
         await ctx.voice_client.disconnect()
 
-    async def setup_hook(self) -> None:
-        # Wavelink 2.0 has made connecting Nodes easier... Simply create each Node
-        # and pass it to NodePool.connect with the client/bot.
-        # Fill your Spotify API details and pass it to connect.
-        sc = spotify.SpotifyClient(
-            client_id='6d793485170f46749e32ce46ad3da004',
-            client_secret='214b8f17a448431a8ca1bde6c25e72be'
-        )
-        node: wavelink.Node = wavelink.Node(uri='http://127.0.0.1:2333', password='youshallnotpass')
-        await wavelink.NodePool.connect(client=self.bot, nodes=[node], spotify=sc)
 
 async def setup(bot):
     await bot.add_cog(Music(bot))
