@@ -34,7 +34,7 @@ class Bot(commands.Bot):
     async def setup_hook(self) -> None:
         # Wavelink 2.0 has made connecting Nodes easier... Simply create each Node
         # and pass it to NodePool.connect with the client/bot.
-        # Fill your Spotify API details and pass it to connect.
+
         sc = spotify.SpotifyClient(
             client_id='6d793485170f46749e32ce46ad3da004',
             client_secret='214b8f17a448431a8ca1bde6c25e72be'
@@ -47,12 +47,4 @@ class Bot(commands.Bot):
 
 if __name__ == "__main__":
     bot = Bot()
-
-    # @bot.command()
-    # async def reload(self, ctx, extension):
-    #     async with ctx.typing():
-    #         bot.reload_extension(f'cogs.{extension}')
-    #         print(f'Reload module {extension} successfully')
-    #     await ctx.send(f'Reload module {extension} successfully')
-
     bot.run(DISCORD_TOKEN)
