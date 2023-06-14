@@ -302,6 +302,18 @@ class Music(commands.Cog):
             await vc.queue.put_wait(track)
 
     @commands.command()
+    async def playt(self, ctx: commands.Context, *, search: str) -> None:
+        """Simple play command."""
+
+        if not ctx.voice_client:
+            vc: wavelink.Player = await ctx.author.voice.channel.connect(cls=wavelink.Player)
+        else:
+            vc: wavelink.Player = ctx.voice_client
+
+        track = await wavelink.YouTubeTrack.search(search, return_first=True)
+        await vc.play(track)
+
+    @commands.command()
     async def volume(self, ctx, volume: int):
         """Changes the player's volume"""
 
