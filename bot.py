@@ -6,18 +6,16 @@ from wavelink.ext import spotify
 
 import os
 
-# contain bot features, like type, message, guild
-# intents = discord.Intents.all()
-# intents.message_content = True
-# # connect to discord server and init bot command features
-# bot = commands.Bot(command_prefix="!", intents=intents)
-# # Get the API token from the .env file.
+# Get the API token from the .env file.
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 
 class Bot(commands.Bot):
     def __init__(self) -> None:
+        # contain bot features, like type, message, guild
         intents = discord.Intents.all()
         intents.message_content = True
+
+        # connect to discord server and init bot command features
         super().__init__(intents=intents, command_prefix='!')
 
     async def on_ready(self) -> None:
