@@ -1,10 +1,11 @@
 import discord
 from discord.ext import commands,tasks
-
 import wavelink
 from wavelink.ext import spotify
 
 import os
+
+import config
 
 # Get the API token from the .env file.
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
@@ -45,4 +46,4 @@ class Bot(commands.Bot):
 
 if __name__ == "__main__":
     bot = Bot()
-    bot.run(DISCORD_TOKEN)
+    bot.run(config.DISCORD_TOKEN)
