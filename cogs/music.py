@@ -25,8 +25,6 @@ from wavelink.ext import spotify
 # 初始化 Spotify 客户端凭据
 spotify_client_id = '6d793485170f46749e32ce46ad3da004'
 spotify_client_secret = '214b8f17a448431a8ca1bde6c25e72be'
-# spotify_credentials = SpotifyClientCredentials(client_id=spotify_client_id, client_secret=spotify_client_secret)
-# spotify = spotipy.Spotify(client_credentials_manager=spotify_credentials)
 
 _YOUTUBE_ = "youtube"
 
