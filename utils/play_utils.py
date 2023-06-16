@@ -31,7 +31,7 @@ async def get_voice_client(ctx: commands.Context) -> wavelink.Player or None:
 
     return vc
 
-async def play_track(ctx, vc: wavelink.Player, track: wavelink.Track):
+async def play_track(ctx: commands.Context, vc: wavelink.Player, track: wavelink.Track):
     """ Play a Track. """
     await vc.play(track)
     vc.ctx = ctx
