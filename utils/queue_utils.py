@@ -16,7 +16,7 @@ def get_from_previous_tracks(pos: int) -> wavelink.GenericTrack:
         return None
 
 
-async def shuffle(queue: wavelink.WaitQueue):
+async def shuffle(queue: wavelink.BaseQueue):
     temp = []
 
     while not queue.is_empty:
