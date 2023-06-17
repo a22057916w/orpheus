@@ -14,3 +14,15 @@ def get_from_previous_tracks(pos: int) -> wavelink.GenericTrack:
         return PREVIOUS_TRACKS.pop(pos)
     except IndexError:
         return None
+
+
+async def shuffle(queue: wavelink.WaitQueue):
+    temp = []
+
+    while not queue.is_empty:
+        temp.append(queue.pop())
+
+    random.shuffle(temp)
+
+    while temp:
+        await queue.put_wait(temp.pop())
