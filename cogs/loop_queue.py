@@ -87,5 +87,35 @@ class LoopQ(commands.Cog):
             current_track = play_utils.get_currenly_playing(vc)
             await ctx.send(f'**Looping {current_track.title}:repeat:**')
 
+    @commands.command()
+    async def shuffle(self, ctx: commands.Context):
+        vc = await play_utils.get_voice_client(ctx)
+
+        if not vc:
+            return
+
+        if vc.queue.is_empty:
+            return await ctx.send('The queue is empty.')
+
+        await queue_utils.shuffle(vc.queue)
+        await ctx.send('**Queue has been shuffled**')
+
+    @commands.command(aliases=['cq'])
+    async def clear(self, ctx: commands.Context):
+        """Clears the queue."""
+        vc = await play_utils.get_voice_client(ctx)
+        if not vc:
+            return
+
+        # If the bot is not playing anything, return.
+        if not vc.is_playing:
+            return await ctx.send('I am not playing anything.')
+
+        # Clears the queue.
+        vc.queue.clear()
+        await ctx.send('**Cleared the queue**')
+
+
+
 async def setup(bot: commands.Bot):
     await bot.add_cog(LoopQ(bot))
