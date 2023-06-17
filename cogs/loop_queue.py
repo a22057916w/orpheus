@@ -3,7 +3,7 @@ import wavelink
 from utils import queue_utils, play_utils
 import config
 #from utils.embed_util import EmbedGenerator
-import Paginator
+import paginator
 
 class LoopQ(commands.Cog):
     """"
