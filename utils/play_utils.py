@@ -31,18 +31,17 @@ async def get_voice_client(ctx: commands.Context) -> wavelink.Player or None:
 
     return vc
 
-async def play_track(ctx: commands.Context, vc: wavelink.Player, track: wavelink.Track):
+async def play_track(ctx: commands.Context, vc: wavelink.Player, track: wavelink.GenericTrack):
     """ Play a Track. """
     await vc.play(track)
     vc.ctx = ctx
-    vc.current = track
     if not hasattr(vc, 'loop'):
         vc.loop = False
     if not hasattr(vc, 'loopq'):
         vc.loopq = False
 
 
-async def play_now(ctx: commands.Context, vc: wavelink.Player, track: wavelink.Track):
+async def play_now(ctx: commands.Context, vc: wavelink.Player, track: wavelink.GenericTrack):
     """Plays a song immediately."""
     if not vc.is_playing:
         await play_track(ctx, vc, track, now=True)
@@ -52,7 +51,7 @@ async def play_now(ctx: commands.Context, vc: wavelink.Player, track: wavelink.T
     vc.queue.put_at_front(track)
     await vc.stop()
 
-def get_currenly_playing(vc: wavelink.Player) -> wavelink.Track:
+def get_currenly_playing(vc: wavelink.Player) -> wavelink.GenericTrack:
     """Gets the currently playing song."""
     return vc.current
 
