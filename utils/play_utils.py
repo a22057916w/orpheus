@@ -44,12 +44,13 @@ async def play_track(ctx: commands.Context, vc: wavelink.Player, track: wavelink
 async def play_now(ctx: commands.Context, vc: wavelink.Player, track: wavelink.GenericTrack):
     """Plays a song immediately."""
     if not vc.is_playing:
-        await play_track(ctx, vc, track, now=True)
+        await play_track(ctx, vc, track)
         return
 
     # Adds the song to the front of queue and skips the current song
     vc.queue.put_at_front(track)
     await vc.stop()
+    await play_track(ctx, vc, track)
 
 def get_currenly_playing(vc: wavelink.Player) -> wavelink.GenericTrack:
     """Gets the currently playing song."""
