@@ -2,7 +2,7 @@ from discord.ext import commands
 import wavelink
 from utils import queue_utils, play_utils
 import config
-from utils.embed_util import EmbedGenerator
+#from utils.embed_util import EmbedGenerator
 import Paginator
 
 class LoopQ(commands.Cog):
