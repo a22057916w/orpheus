@@ -43,5 +43,30 @@ class LoopQ(commands.Cog):
             await ctx.send('**Queue has concluded.**')
 
 
+    @commands.command(aliases=['lq'])
+    async def loopq(self, ctx: commands.Context):
+        """Loops the queue."""
+        vc = await play_utils.get_voice_client(ctx)
+        if not vc:
+            return
+
+        # If the bot is not playing anything, return.
+        if not vc.is_playing:
+            return await ctx.send('I am not playing anything.')
+
+        # If the song is on loop, turn it off.
+        if vc.loopq:
+            vc.loopq = False
+            config.LOOPQ = None
+            await ctx.send('*Loop disabled*')
+        # If the song is not on loop, turn it on.
+        else:
+            vc.loopq = True
+            current_track = play_utils.get_currenly_playing(vc)
+            config.LOOPQ = vc.queue.copy()
+            config.LOOPQ.put_at_front(current_track)
+            await ctx.send('**Queue is now on loop :repeat:**')
+
+
 async def setup(bot: commands.Bot):
     await bot.add_cog(LoopQ(bot))
