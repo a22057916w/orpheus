@@ -67,3 +67,5 @@ async def add_tracks_from_collection(ctx: commands.Context, vc: wavelink.Player,
             await config.LOOPQ.put_wait(song)
 
         count += 1
+
+    await temp_msg.delete()
