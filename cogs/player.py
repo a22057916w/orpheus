@@ -168,7 +168,7 @@ class Player(commands.Cog):
             # add songs to tracks until the queue is empty
             while True:
                 tracks.append(vc.queue.get())
-        except wavelink.errors.QueueEmpty:
+        except wavelink.QueueEmpty:
             # play the song at position pos (index is pos - 1)
             song = tracks[pos - 1]
             await play_utils.play_now(ctx, vc, song)
