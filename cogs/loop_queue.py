@@ -96,6 +96,7 @@ class LoopQ(commands.Cog):
 
     @commands.command()
     async def shuffle(self, ctx: commands.Context):
+        "Shuffle the queue."
         vc = await play_utils.get_voice_client(ctx)
 
         if not vc:
