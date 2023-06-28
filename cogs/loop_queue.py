@@ -22,6 +22,11 @@ class LoopQ(commands.Cog):
 
         vc = player.guild.voice_client
         ctx = player.ctx
+
+        # If the bot is not in a voice channel (on_voice_state_update() or !leave called)
+        if not vc:
+            return
+
         # If the track is on loop, play it again.
         if vc.loop:
             return await play_utils.play_track(ctx, vc, track)
