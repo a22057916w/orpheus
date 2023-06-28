@@ -2,12 +2,13 @@ from discord.ext import commands
 import discord
 import wavelink
 from utils import ytb_utils, play_utils, spotify_utils
+from utils.embed_utils import EmbedGenerator
 from config import PREVIOUS_TRACKS
 
 
 class Player(commands.Cog):
 
-    #eg = EmbedGenerator()
+    eg = EmbedGenerator()
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -132,8 +133,7 @@ class Player(commands.Cog):
             return await ctx.send('I am not playing anything.')
 
         # Gets the current song.
-        await ctx.send(f'Now playing: {vc.current}')
-        #await ctx.reply(embed=self.eg.now_playing(vc.current))
+        await ctx.send(embed=self.eg.now_playing(vc.current))
 
     @commands.command()
     async def skip(self, ctx: commands.Context):
