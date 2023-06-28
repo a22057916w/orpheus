@@ -12,27 +12,32 @@ class Player(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    # @commands.Cog.listener()
-    # async def on_voice_state_update(self, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
-    #     """Disconnects the bot when the last person leaves the voice channel."""
-    #     # If the bot is not in a voice channel, return.
-    #     if not member.guild.voice_client in self.bot.voice_clients:
-    #         return
-    #
-    #     if before.channel == after.channel:
-    #         return
-    #
-    #     # If the bot is in a voice channel, disconnect.
-    #     if member == self.bot.user and not after.channel:
-    #         vc = member.guild.voice_client
-    #         await vc.disconnect()
-    #         return
-    #
-    #     # If the bot is the only one in the voice channel, disconnect.
-    #     if len(before.channel.members) == 1 and before.channel.members[0] == self.bot.user:
-    #         vc = member.guild.voice_client
-    #         await vc.disconnect()
-    #         return
+    @commands.Cog.listener()
+    async def on_voice_state_update(self, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
+        """Disconnects the bot when the last person leaves the voice channel."""
+
+        # If the bot is not in a voice channel, return.
+        if not member.guild.voice_client in self.bot.voice_clients:
+            return
+
+        if before.channel == after.channel:
+            return
+
+        # If the bot is called to a voice channel first time
+        if not before.channel:
+            return
+
+        # If the bot is in a voice channel, disconnect.
+        if member == self.bot.user and not after.channel:
+            vc = member.guild.voice_client
+            await vc.disconnect()
+            return
+
+        # If the bot is the only one in the voice channel, disconnect.
+        if len(before.channel.members) == 1 and before.channel.members[0] == self.bot.user:
+            vc = member.guild.voice_client
+            await vc.disconnect()
+            return
 
     @commands.command(aliases=['p'])
     async def play(self, ctx: commands.Context, *, search):
