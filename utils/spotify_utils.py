@@ -1,8 +1,11 @@
 import wavelink
 from wavelink.ext import spotify
 from utils.play_utils import play_track, play_now, disable_loops
+from utils.embed_utils import EmbedGenerator
 from discord.ext import commands
 import config
+
+eg = EmbedGenerator()
 
 async def play_spotify(ctx: commands.Context, vc: wavelink.Player, search: str, now=False):
     try:
@@ -44,6 +47,9 @@ async def play_spotify_track(ctx: commands.Context, vc: wavelink.Player, search:
 
         # If the bot is playing something, add the song to the queue
         await vc.queue.put_wait(song)
+        # Sends the embed
+        embed = eg.song_queued(song, vc.queue.count)
+        await ctx.send(embed=embed)
 
 
 async def add_tracks_from_collection(ctx: commands.Context, vc: wavelink.Player, query: str):
@@ -68,4 +74,7 @@ async def add_tracks_from_collection(ctx: commands.Context, vc: wavelink.Player,
 
         count += 1
 
+    # Sends the embed
+    embed = eg.playlist_added(count)
     await temp_msg.delete()
+    await ctx.send(embed=embed)
