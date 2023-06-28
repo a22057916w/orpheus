@@ -127,6 +127,7 @@ class Player(commands.Cog):
             return await ctx.send('I am not playing anything.')
 
         # Gets the current song.
+        await ctx.send(f'Now playing: {vc.current}')
         #await ctx.reply(embed=self.eg.now_playing(vc.current))
 
     @commands.command()
