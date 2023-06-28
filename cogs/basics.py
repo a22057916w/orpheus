@@ -13,6 +13,7 @@ class Basics(commands.Cog):
 
     @commands.command()
     async def reload(self, ctx, extension):
+        "Reload a specific cog."
         async with ctx.typing():
             self.bot.reload_extension(f'cogs.{extension}')
             print(f'Reload module {extension} successfully')
