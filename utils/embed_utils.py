@@ -23,3 +23,18 @@ class EmbedGenerator:
             duration = f'0:{duration}'
         embed.add_field(name="Duration", value=duration, inline=True)
         return embed
+
+
+    def song_queued(self, song: wavelink.GenericTrack, pos: int) -> discord.Embed:
+        embed = discord.Embed(title="Song Queued",
+                            description=song.title,
+                            color=discord.Color.blue())
+        embed.add_field(name="Position", value=pos, inline=True)
+        return embed
+
+
+    def playlist_added(self, count: int) -> discord.Embed:
+        embed = discord.Embed(title="Update Queue",
+                            description=f"{count} songs were added to the queue.",
+                            color=discord.Color.blue())
+        return embed
