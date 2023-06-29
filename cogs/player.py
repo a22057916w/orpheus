@@ -216,7 +216,7 @@ class Player(commands.Cog):
             await ctx.reply("Nothing has been played yet")
             return
         # sends the embed with list of recently played songs
-        #await ctx.send(embed=self.eg.show_previous())
+        await ctx.send(embed=self.eg.show_previous())
 
     @commands.command(name='playlast', aliases=['pl'])
     async def play_last(self, ctx: commands.Context, pos: int = 1):
