@@ -2,8 +2,10 @@ from discord.ext import commands
 import wavelink
 import config
 from utils.play_utils import play_track, play_now, disable_loops
+from utils.embed_utils import EmbedGenerator
 import pytube
 
+eg = EmbedGenerator()
 
 async def play_ytb(ctx: commands.Context, vc: wavelink.Player, search: str, now=False):
     if "youtube.com/playlist" in search:
@@ -52,7 +54,7 @@ async def add_playlist(ctx: commands.Context, vc: wavelink.Player, search: str):
             count += 1
 
         await temp.delete()
-
+        await ctx.send(embed=eg.playlist_added(count))
 
 async def add_song(ctx: commands.Context, vc: wavelink.Player, search: str, now: bool):
     """
@@ -78,6 +80,7 @@ async def add_song(ctx: commands.Context, vc: wavelink.Player, search: str, now:
 
         # If the bot is playing something, add the song to the queue
         await vc.queue.put_wait(track)
+        await ctx.send(embed=eg.song_queued(track, vc.queue.count))
 
         # If loopq is enabled, add the song to the cahce queue
         if vc.loopq:
