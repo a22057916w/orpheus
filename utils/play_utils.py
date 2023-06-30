@@ -1,8 +1,10 @@
 from discord.ext import commands
 import wavelink
 
-
+from utils.embed_utils import EmbedGenerator
 import config
+
+eg = EmbedGenerator()
 
 async def get_voice_client(ctx: commands.Context) -> wavelink.Player or None:
     """Gets the voice client for the bot."""
@@ -33,6 +35,12 @@ async def get_voice_client(ctx: commands.Context) -> wavelink.Player or None:
 
 async def play_track(ctx: commands.Context, vc: wavelink.Player, track: wavelink.GenericTrack):
     """ Play a Track. """
+    if config.MESSAGE_NOW_PLAYING:
+        await config.MESSAGE_NOW_PLAYING.delete()
+
+    embed = eg.now_playing(track)
+    config.MESSAGE_NOW_PLAYING = await ctx.send(embed=embed)
+
     await vc.play(track)
     vc.ctx = ctx
     if not hasattr(vc, 'loop'):
@@ -53,7 +61,7 @@ async def play_now(ctx: commands.Context, vc: wavelink.Player, track: wavelink.G
     vc.queue.put_at_front(track)
 
     await vc.stop()
-    
+
     # put the current song after the require song
     await vc.queue.put_wait(current_track)
 
