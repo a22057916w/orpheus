@@ -3,7 +3,7 @@ import wavelink
 from utils import queue_utils, play_utils
 import config
 from utils.embed_utils import EmbedGenerator
-import paginator
+import Paginator
 
 class LoopQ(commands.Cog):
     """"
@@ -124,7 +124,7 @@ class LoopQ(commands.Cog):
 
         # gets the pages in the queue embed
         pages = self.eg.show_queue(vc)
-        await paginator.Simple(timeout=20).start(ctx, pages=pages)
+        await Paginator.Simple(timeout=20).start(ctx, pages=pages)
 
 
     @commands.command(aliases=['cq'])
