@@ -38,10 +38,13 @@ async def play_track(ctx: commands.Context, vc: wavelink.Player, track: wavelink
     if config.MESSAGE_NOW_PLAYING:
         await config.MESSAGE_NOW_PLAYING.delete()
 
-    embed = eg.now_playing(track)
+    await vc.play(track)
+
+    # wavelink gets song from ytb and eventually convert to YoutbeTrack,
+    # hence the embed must place after vc.play
+    embed = eg.now_playing(vc.current)
     config.MESSAGE_NOW_PLAYING = await ctx.send(embed=embed)
 
-    await vc.play(track)
     vc.ctx = ctx
     if not hasattr(vc, 'loop'):
         vc.loop = False
