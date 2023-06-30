@@ -2,13 +2,16 @@ from discord.ext import commands
 import wavelink
 from utils import queue_utils, play_utils
 import config
-#from utils.embed_util import EmbedGenerator
+from utils.embed_utils import EmbedGenerator
 import paginator
 
 class LoopQ(commands.Cog):
     """"
     Queue and Loop commands.
     """
+
+    eg = EmbedGenerator()
+
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
@@ -107,6 +110,22 @@ class LoopQ(commands.Cog):
 
         await queue_utils.shuffle(vc.queue)
         await ctx.send('**Queue has been shuffled**')
+
+
+    @commands.command(aliases=['q'])
+    async def queue(self, ctx: commands.Context):
+        vc = await play_utils.get_voice_client(ctx)
+        if not vc:
+            return
+
+        # If the queue is empty, return.
+        if vc.queue.is_empty:
+            return await ctx.send('Queue is empty')
+
+        # gets the pages in the queue embed
+        pages = self.eg.show_queue(vc)
+        await paginator.Simple(timeout=20).start(ctx, pages=pages)
+
 
     @commands.command(aliases=['cq'])
     async def clear(self, ctx: commands.Context):
