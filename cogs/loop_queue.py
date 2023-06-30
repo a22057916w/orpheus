@@ -1,8 +1,9 @@
 from discord.ext import commands
 import wavelink
+
 from utils import queue_utils, play_utils
-import config
 from utils.embed_utils import EmbedGenerator
+import config
 import Paginator
 
 class LoopQ(commands.Cog):
@@ -114,6 +115,7 @@ class LoopQ(commands.Cog):
 
     @commands.command(aliases=['q'])
     async def queue(self, ctx: commands.Context):
+        "Show the songs in the queue."
         vc = await play_utils.get_voice_client(ctx)
         if not vc:
             return
