@@ -8,11 +8,13 @@ import pytube
 eg = EmbedGenerator()
 
 async def play_ytb(ctx: commands.Context, vc: wavelink.Player, search: str, now=False):
-    if "youtube.com/playlist" in search:
+    if "list" in search:
+        print("playllist")
         if now:
             return await ctx.reply("Playnow command can only take in single songs.")
         await add_playlist(ctx, vc, search)
     elif "youtube.com/watch" in search:
+        print("watch")
         search = form_query(search)
 
     await add_song(ctx, vc, search, now)
