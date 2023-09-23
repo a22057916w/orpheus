@@ -33,7 +33,7 @@ async def add_playlist(ctx: commands.Context, vc: wavelink.Player, search: str):
         playlist = await wavelink.YouTubePlaylist.search(search)
         tracks = playlist.tracks
     # if the playlist is not found, return
-    except wavelink.exceptions.NoTracksFound:
+    except wavelink.NoTracksError:
         return await ctx.reply(config.INVALID_INPUT)
 
     else:
@@ -65,9 +65,9 @@ async def add_song(ctx: commands.Context, vc: wavelink.Player, search: str, now:
     # Searches for the song
     try:
         # To get only one song, return_first must be true
-        track = await wavelink.YouTubeTrack.search(search, return_first=True)
+        track = await wavelink.YouTubeTrack.search(search)
     # sends a message if the song is not found
-    except wavelink.exceptions.NoTracksFound:
+    except wavelink.NoTracksError:
         return await ctx.reply(config.INVALID_INPUT)
     else:
         # If the bot is not playing anything, play the song

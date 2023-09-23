@@ -38,6 +38,7 @@ async def play_track(ctx: commands.Context, vc: wavelink.Player, track: wavelink
     if config.MESSAGE_NOW_PLAYING:
         await config.MESSAGE_NOW_PLAYING.delete()
 
+    track = track[0]
     await vc.play(track)
 
     # wavelink gets song from ytb and eventually convert to YoutbeTrack,
