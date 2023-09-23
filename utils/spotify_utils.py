@@ -34,7 +34,6 @@ async def play_spotify(ctx: commands.Context, vc: wavelink.Player, search: str, 
 async def play_spotify_track(ctx: commands.Context, vc: wavelink.Player, search: str, now: bool):
         # gets the song
         song = await spotify.SpotifyTrack.search(search)
-        song.uri = search
 
         # If the bot is not playing anything, play the song
         if not vc.is_playing():
