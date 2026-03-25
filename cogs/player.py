@@ -1,6 +1,5 @@
 from discord.ext import commands
 import discord
-import wavelink
 from utils import ytb_utils, play_utils, spotify_utils
 from utils.embed_utils import EmbedGenerator
 from config import PREVIOUS_TRACKS
@@ -47,7 +46,7 @@ class Player(commands.Cog):
             await ctx.reply('Please enter a search query.')
             return
 
-        vc: wavelink.Player = await play_utils.get_voice_client(ctx)
+        vc = await play_utils.get_voice_client(ctx)
 
         if not vc:
             return
@@ -66,7 +65,7 @@ class Player(commands.Cog):
             await ctx.reply('Please enter a search query.')
             return
 
-        vc: wavelink.Player = await play_utils.get_voice_client(ctx)
+        vc = await play_utils.get_voice_client(ctx)
 
         if not vc:
             return
@@ -109,7 +108,7 @@ class Player(commands.Cog):
             return await ctx.send('I am not playing anything.')
 
         # Pauses the song.
-        await vc.pause()
+        vc.pause()
         await ctx.send('**Paused**')
 
     @commands.command(aliases=['res', 'r'])
@@ -118,7 +117,7 @@ class Player(commands.Cog):
         vc = await play_utils.get_voice_client(ctx)
         # If the bot is in a voice channel, resumes
         if vc:
-            await vc.resume()
+            vc.resume()
             await ctx.send('**Resumed**')
 
     @commands.command(aliases=['np'])
@@ -133,7 +132,7 @@ class Player(commands.Cog):
             return await ctx.send('I am not playing anything.')
 
         # Gets the current song.
-        await ctx.send(embed=self.eg.now_playing(vc.current))
+        await ctx.send(embed=self.eg.now_playing(vc.current_track))
 
     @commands.command()
     async def skip(self, ctx: commands.Context):
@@ -147,8 +146,8 @@ class Player(commands.Cog):
             return await ctx.send('I am not playing anything.')
 
         # Skips the song.
-        track = vc.current
-        await vc.stop()
+        track = vc.current_track
+        vc.stop()
         await ctx.send(f'*Skipped* **{track.title}**')
 
     @commands.command(aliases=['st'])
@@ -161,29 +160,27 @@ class Player(commands.Cog):
         if not vc:
             return
 
-        if vc.queue.is_empty:
+        if not vc.queue:
             return await ctx.reply('*Queue is empty*')
 
         # If the position is out of range, return
-        if pos > vc.queue.count or pos <= 0:
-            return await ctx.reply(f'Position should be between 0 and {vc.queue.count}')
+        if pos > len(vc.queue) or pos <= 0:
+            return await ctx.reply(f'Position should be between 0 and {len(vc.queue)}')
 
-        # removing tracks from index 0 to index pos-2
-        tracks = []
-        try:
-            # add songs to tracks until the queue is empty
-            while True:
-                tracks.append(vc.queue.get())
-        except wavelink.QueueEmpty:
-            # play the song at position pos (index is pos - 1)
-            song = tracks[pos - 1]
-            await play_utils.play_now(ctx, vc, song)
-            # add the rest of the songs to the queue
-            if not pos >= len(tracks):
-                tracks = tracks[pos:]
-                # put the remaining tracks back in queue
-                for track in tracks:
-                    await vc.queue.put_wait(track)
+        # Remove tracks from index 0 to pos-2
+        skipped_tracks = []
+        for i in range(pos - 1):
+            if vc.queue:
+                skipped_tracks.append(vc.queue.popleft())
+
+        # Skip current track
+        if vc.is_playing:
+            vc.stop()
+
+        # Play the track at position pos
+        if vc.queue:
+            next_track = vc.queue.popleft()
+            await play_utils.play_track(ctx, vc, next_track)
 
         # sends a message informing about the successful skip
         await ctx.reply(f'**Skipped to position {pos}**')
@@ -202,7 +199,7 @@ class Player(commands.Cog):
         # Clears the queue, disables loops and stops the song
         vc.queue.clear()
         play_utils.disable_loops(vc)
-        await vc.stop()
+        vc.stop()
         await ctx.send('**Stopped**')
 
 
@@ -239,7 +236,7 @@ class Player(commands.Cog):
 
         # plays the song at given
         track = PREVIOUS_TRACKS.pop(pos-1)
-        await self.playnow(ctx, search=track.uri)
+        await self.playnow(ctx, search=track.url)
 
 
     @commands.command(aliases=['rem'])
@@ -256,12 +253,12 @@ class Player(commands.Cog):
             return
 
         # If the queue is empty, return
-        if vc.queue.is_empty:
+        if not vc.queue:
             return await ctx.reply('*Queue is empty*')
 
         # If the position is out of range, return
-        if pos > vc.queue.count or pos <= 0:
-            return await ctx.reply(f'Position should be between 1 and {vc.queue.count}')
+        if pos > len(vc.queue) or pos <= 0:
+            return await ctx.reply(f'Position should be between 1 and {len(vc.queue)}')
 
         # removing tracks at the given position
         track = vc.queue[pos-1]
@@ -286,7 +283,7 @@ class Player(commands.Cog):
         words = [word for word in words if word not in ['the', 'a', 'an']]
 
         # search for the title in the queue
-        for i in range(0, vc.queue.count):
+        for i in range(len(vc.queue)):
             # if the title is found, return the position
             for word in words:
                 if not word.lower() in vc.queue[i].title.lower():

@@ -1,14 +1,10 @@
 import discord
-from discord.ext import commands,tasks
-import wavelink
-from wavelink.ext import spotify
-
+from discord.ext import commands
 import os
-
 import config
 
 # Get the API token from the .env file.
-DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
+DISCORD_TOKEN = config.DISCORD_TOKEN
 
 class Bot(commands.Bot):
     def __init__(self) -> None:
@@ -27,23 +23,9 @@ class Bot(commands.Bot):
     async def load_cog(self):
         for pyfile in os.listdir("./cogs"):
             if pyfile.endswith(".py"):
-                await bot.load_extension(f'cogs.{pyfile[:-3]}')
-                print(f'Load moduel {pyfile[:-3]} successfully')
-
-    async def setup_hook(self) -> None:
-        # Wavelink 2.0 has made connecting Nodes easier... Simply create each Node
-        # and pass it to NodePool.connect with the client/bot.
-
-        sc = spotify.SpotifyClient(
-            client_id='6d793485170f46749e32ce46ad3da004',
-            client_secret='214b8f17a448431a8ca1bde6c25e72be'
-        )
-        node: wavelink.Node = wavelink.Node(uri='http://127.0.0.1:2333', password='youshallnotpass')
-        await wavelink.NodePool.connect(client=self, nodes=[node], spotify=sc)
-
-
-
+                await self.load_extension(f'cogs.{pyfile[:-3]}')
+                print(f'Load module {pyfile[:-3]} successfully')
 
 if __name__ == "__main__":
     bot = Bot()
-    bot.run(config.DISCORD_TOKEN)
+    bot.run(DISCORD_TOKEN)

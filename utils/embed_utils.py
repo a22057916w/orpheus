@@ -1,6 +1,6 @@
 import discord
-import wavelink
 import datetime
+from typing import Any
 from config import PREVIOUS_TRACKS, PREFIX
 from discord.ext import commands
 
@@ -13,8 +13,7 @@ class EmbedGenerator:
     def __init__(self) -> None:
         pass
 
-    def now_playing(self, song: wavelink.GenericTrack) -> discord.Embed:
-        # Song(source, url, title, description, views, duration, thumbnail, channel, channel_url, False)
+    def now_playing(self, song: Any) -> discord.Embed:
         embed = discord.Embed(title=f"Now Playing: {song.title} :notes:",
                               description=f"By {song.author}",
                               color=discord.Color.green())
@@ -25,7 +24,7 @@ class EmbedGenerator:
         return embed
 
 
-    def song_queued(self, song: wavelink.GenericTrack, pos: int) -> discord.Embed:
+    def song_queued(self, song: Any, pos: int) -> discord.Embed:
         embed = discord.Embed(title="Song Queued",
                             description=song.title,
                             color=discord.Color.blue())
@@ -39,20 +38,15 @@ class EmbedGenerator:
                             color=discord.Color.blue())
         return embed
 
-    def show_queue(self, vc: wavelink.Player) -> discord.Embed:
+    def show_queue(self, vc: discord.VoiceClient) -> list[discord.Embed]:
         pages = []
-        songs = vc.queue.copy()
+        songs = list(vc.queue)
         song_count = 0
         desc = ""
-        if (a := len(songs)/15) is int:
-            total_pages = a
-        else:
-            total_pages = int(a) + 1
-
-        total_songs = songs.count
+        total_songs = len(songs)
         page_count = 1
-        while not songs.is_empty:
-            song = songs.get()
+
+        for song in songs:
             song_count += 1
             try:
                 duration = str(datetime.timedelta(seconds=song.duration)).lstrip("0:")
@@ -64,7 +58,7 @@ class EmbedGenerator:
             except AttributeError:
                 desc += f"{song_count}. {song.title}\n"
 
-            if song_count//15 == page_count:
+            if song_count % 15 == 0 and song_count // 15 == page_count:
                 queue_embed_page = discord.Embed(
                     title=f"Queue | {total_songs} Tracks",
                     description=desc,
@@ -73,7 +67,6 @@ class EmbedGenerator:
                 pages.append(queue_embed_page)
                 desc = ""
                 page_count += 1
-                continue
 
         if desc:
             queue_embed_page = discord.Embed(
@@ -81,7 +74,7 @@ class EmbedGenerator:
                 description=desc,
                 color=discord.Color.gold())
             pages.append(queue_embed_page)
-            
+
         return pages
 
 

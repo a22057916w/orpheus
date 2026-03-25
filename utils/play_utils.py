@@ -1,12 +1,27 @@
 from discord.ext import commands
-import wavelink
+import discord
+import asyncio
+from collections import deque
+from typing import Optional, Dict, Any
 
 from utils.embed_utils import EmbedGenerator
 import config
 
 eg = EmbedGenerator()
 
-async def get_voice_client(ctx: commands.Context) -> wavelink.Player or None:
+class Track:
+    """Represents a music track."""
+    def __init__(self, title: str, author: str, url: str, duration: int, thumbnail: str = None):
+        self.title = title
+        self.author = author
+        self.url = url
+        self.duration = duration
+        self.thumbnail = thumbnail
+
+    def __str__(self):
+        return f"{self.title} by {self.author}"
+
+async def get_voice_client(ctx: commands.Context) -> Optional[discord.VoiceClient]:
     """Gets the voice client for the bot."""
     # Check if the user is in a voice channel.
     if not ctx.author.voice:
@@ -15,68 +30,127 @@ async def get_voice_client(ctx: commands.Context) -> wavelink.Player or None:
 
     # If bot is not in any voice channel, join the author's voice channel
     if not ctx.voice_client:
-        vc: wavelink.Player = await ctx.author.voice.channel.connect(cls=wavelink.Player)
+        vc = await ctx.author.voice.channel.connect()
 
     # If bot is in a voice channel, check if the author is in the same voice channel
     elif ctx.voice_client.channel != ctx.author.voice.channel:
         # If the bot is not playing anything, move to the author's voice channel
         if not ctx.voice_client.is_playing:
             await ctx.voice_client.move_to(ctx.author.voice.channel)
-            vc: wavelink.Player = ctx.voice_client
+            vc = ctx.voice_client
         # If the bot is playing something, send an error message
         else:
             await ctx.reply(config.USER_NOT_IN_SAME_VOICE_CHANNEL)
             return None
     # If bot is in the same voice channel as the author, return the voice client
     else:
-        vc: wavelink.Player = ctx.voice_client
+        vc = ctx.voice_client
+
+    # Initialize queue and loop attributes if not present
+    if not hasattr(vc, 'queue'):
+        vc.queue = deque()
+    if not hasattr(vc, 'loop'):
+        vc.loop = False
+    if not hasattr(vc, 'loop_all'):
+        vc.loop_all = False
+    if not hasattr(vc, 'current_track'):
+        vc.current_track = None
+    if not hasattr(vc, 'ctx'):
+        vc.ctx = ctx
 
     return vc
 
-async def play_track(ctx: commands.Context, vc: wavelink.Player, track: wavelink.GenericTrack):
-    """ Play a Track. """
+async def play_track(ctx: commands.Context, vc: discord.VoiceClient, track: Track):
+    """Play a Track."""
     if config.MESSAGE_NOW_PLAYING:
-        await config.MESSAGE_NOW_PLAYING.delete()
+        try:
+            await config.MESSAGE_NOW_PLAYING.delete()
+        except:
+            pass
 
-    track = track[0]
-    await vc.play(track)
+    vc.current_track = track
 
-    # wavelink gets song from ytb and eventually convert to YoutbeTrack,
-    # hence the embed must place after vc.play
-    embed = eg.now_playing(vc.current)
+    # Create FFmpeg audio source
+    try:
+        audio_source = discord.FFmpegPCMAudio(
+            track.url,
+            executable="ffmpeg",
+            before_options="-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
+            options='-vn'
+        )
+        audio_source = discord.PCMVolumeTransformer(audio_source, volume=0.7)
+        print(f"DEBUG: Created audio source for {track.title} ({track.url})")
+    except Exception as e:
+        print(f"ERROR: Failed to create audio source: {str(e)}")
+        await ctx.send(f"Error creating audio source: {str(e)}")
+        return
+
+    # Play the track
+    try:
+        vc.play(audio_source, after=lambda e: asyncio.run_coroutine_threadsafe(
+            on_track_end(vc), vc.loop
+        ))
+        print(f"DEBUG: Started playing {track.title}")
+        print(f"DEBUG: vc.is_playing() -> {vc.is_playing()}")
+    except Exception as e:
+        print(f"ERROR: Failed to play track: {str(e)}")
+        await ctx.send(f"Error playing track: {str(e)}")
+        return
+
+    # Send now playing embed
+    embed = eg.now_playing(track)
     config.MESSAGE_NOW_PLAYING = await ctx.send(embed=embed)
 
     vc.ctx = ctx
-    if not hasattr(vc, 'loop'):
-        vc.loop = False
-    if not hasattr(vc, 'loopq'):
-        vc.loopq = False
 
+async def on_track_end(vc: discord.VoiceClient):
+    """Called when a track ends."""
+    # Add current track to previous tracks
+    if vc.current_track:
+        config.PREVIOUS_TRACKS.append(vc.current_track)
+        if len(config.PREVIOUS_TRACKS) > 10:
+            config.PREVIOUS_TRACKS.pop(0)
 
-async def play_now(ctx: commands.Context, vc: wavelink.Player, track: wavelink.GenericTrack):
-    """Plays a song immediately."""
-    if not vc.is_playing:
-        await play_track(ctx, vc, track)
+    # Handle looping
+    if vc.loop and vc.current_track:
+        # Replay current track
+        await play_track(vc.ctx, vc, vc.current_track)
         return
 
-    current_track = get_currenly_playing(vc)
+    # Handle queue loop
+    if vc.loop_all and not vc.queue:
+        # Restore loop queue
+        vc.queue = deque(config.LOOPQ) if config.LOOPQ else deque()
 
-    # Adds the reqire song to the front of queue and skips the current song
-    vc.queue.put_at_front(track)
+    # Play next track if queue not empty
+    if vc.queue:
+        next_track = vc.queue.popleft()
+        await play_track(vc.ctx, vc, next_track)
+    else:
+        # Queue is empty
+        vc.current_track = None
+        await vc.ctx.send('**Queue has concluded.**')
 
-    await vc.stop()
+async def play_now(ctx: commands.Context, vc: discord.VoiceClient, track: Track):
+    """Plays a song immediately."""
+    if vc.is_playing():
+        # Stop current track and add it back to front of queue
+        vc.stop()
+        if vc.current_track:
+            vc.queue.appendleft(vc.current_track)
 
-    # put the current song after the require song
-    await vc.queue.put_wait(current_track)
+    # Disable loops for play now
+    disable_loops(vc)
 
+    # Play the new track
     await play_track(ctx, vc, track)
 
-def get_currenly_playing(vc: wavelink.Player) -> wavelink.GenericTrack:
+def get_currently_playing(vc: discord.VoiceClient) -> Optional[Track]:
     """Gets the currently playing song."""
-    return vc.current
+    return vc.current_track
 
-def disable_loops(vc: wavelink.Player):
+def disable_loops(vc: discord.VoiceClient):
     """Disables loops."""
     vc.loop = False
-    vc.loopq = False
+    vc.loop_all = False
     config.LOOPQ = None
