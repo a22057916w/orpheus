@@ -29,6 +29,7 @@
 - Player commands: adapt [`cogs/player.py`](/f:/Code/orpheus/cogs/player.py) and [`cogs/loop_queue.py`](/f:/Code/orpheus/cogs/loop_queue.py) to the new playback and loop model.
 
 ### Fixes
+- Startup lifecycle: move one-time bot initialization out of `on_ready()` and into `setup_hook()` to avoid duplicate startup work during reconnects.
 - Credentials: fix token and Spotify credential sourcing by using a shared config layer instead of scattered direct environment access.
 - Naming: correct the Spotify secret naming to `SPOTIFY_CLIENT_SECRET` and clean up helper naming around the current track state.
 - Loop state: align queue-loop behavior around `loop_all` and centralized saved queue state with `config.LOOPQ`.
