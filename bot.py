@@ -25,15 +25,15 @@ class Bot(commands.Bot):
     @override
     async def setup_hook(self) -> None:
         await self.load_cogs()
+
+    @override 
+    async def on_ready(self) -> None:
         await self.change_presence(
             activity=discord.Activity(
                 type=discord.ActivityType.listening,
                 name="!help"
             )
         )
-
-    @override 
-    async def on_ready(self) -> None:
         print(f'Bot is ready! Logged in as {self.user}')
 
     async def load_cogs(self) -> None:
