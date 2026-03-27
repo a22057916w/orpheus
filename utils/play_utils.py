@@ -105,31 +105,42 @@ async def play_track(ctx: commands.Context, vc: discord.VoiceClient, track: Trac
 
 async def on_track_end(vc: discord.VoiceClient):
     """Called when a track ends."""
-    # Add current track to previous tracks
-    if vc.current_track:
-        config.PREVIOUS_TRACKS.append(vc.current_track)
-        if len(config.PREVIOUS_TRACKS) > 10:
-            config.PREVIOUS_TRACKS.pop(0)
+    try:
+        # Add current track to previous tracks
+        if vc.current_track:
+            config.PREVIOUS_TRACKS.append(vc.current_track)
+            if len(config.PREVIOUS_TRACKS) > 10:
+                config.PREVIOUS_TRACKS.pop(0)
 
-    # Handle looping
-    if vc.loop and vc.current_track:
-        # Replay current track
-        await play_track(vc.ctx, vc, vc.current_track)
-        return
+        # Handle looping
+        if vc.loop and vc.current_track:
+            # Replay current track
+            print(f"DEBUG: Replaying current track (loop mode)")
+            await play_track(vc.ctx, vc, vc.current_track)
+            return
 
-    # Handle queue loop
-    if vc.loop_all and not vc.queue:
-        # Restore loop queue
-        vc.queue = deque(config.LOOPQ) if config.LOOPQ else deque()
+        # Handle queue loop
+        if vc.loop_all and not vc.queue:
+            # Restore loop queue
+            vc.queue = deque(config.LOOPQ) if config.LOOPQ else deque()
+            print(f"DEBUG: Restored loop queue, {len(vc.queue)} tracks")
 
-    # Play next track if queue not empty
-    if vc.queue:
-        next_track = vc.queue.popleft()
-        await play_track(vc.ctx, vc, next_track)
-    else:
-        # Queue is empty
-        vc.current_track = None
-        await vc.ctx.send('**Queue has concluded.**')
+        # Play next track if queue not empty
+        if vc.queue:
+            next_track = vc.queue.popleft()
+            print(f"DEBUG: Playing next track from queue: {next_track.title}")
+            await play_track(vc.ctx, vc, next_track)
+        else:
+            # Queue is empty
+            vc.current_track = None
+            print(f"DEBUG: Queue concluded, sending message")
+            await vc.ctx.send('**Queue has concluded.**')
+    except Exception as e:
+        print(f"ERROR in on_track_end: {str(e)}")
+        try:
+            await vc.ctx.send(f"Error playing next track: {str(e)}")
+        except:
+            pass
 
 async def play_now(ctx: commands.Context, vc: discord.VoiceClient, track: Track):
     """Plays a song immediately."""
