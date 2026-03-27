@@ -1,4 +1,4 @@
-python >= 3.10
+# python >= 3.14
 discord.py >= 2.3.0
 discord.py[voice]
 discord.py-pagination==0.0.5
