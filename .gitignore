@@ -2,4 +2,3 @@
 openjdk-19.0.1_windows-x64_bin/
 .env
 *.pyc
-./.env
