@@ -52,12 +52,12 @@ class LoopQ(commands.Cog):
             return await ctx.send('I am not playing anything.')
 
         # If the song is on loop, turn it off.
-        if vc.loop:
-            vc.loop = False
+        if vc.track_loop:
+            vc.track_loop = False
             await ctx.send('**Loop disabled**')
         # If the song is not on loop, turn it on.
         else:
-            vc.loop = True
+            vc.track_loop = True
             current_track = play_utils.get_currently_playing(vc)
             await ctx.send(f'**Looping {current_track.title}:repeat:**')
 

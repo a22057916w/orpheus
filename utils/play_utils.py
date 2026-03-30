@@ -49,8 +49,8 @@ async def get_voice_client(ctx: commands.Context) -> Optional[discord.VoiceClien
     # Initialize queue and loop attributes if not present
     if not hasattr(vc, 'queue'):
         vc.queue = deque()
-    if not hasattr(vc, 'loop'):
-        vc.loop = False
+    if not hasattr(vc, 'track_loop'):
+        vc.track_loop = False
     if not hasattr(vc, 'loop_all'):
         vc.loop_all = False
     if not hasattr(vc, 'current_track'):
@@ -88,7 +88,7 @@ async def play_track(ctx: commands.Context, vc: discord.VoiceClient, track: Trac
     # Play the track
     try:
         vc.play(audio_source, after=lambda e: asyncio.run_coroutine_threadsafe(
-            on_track_end(vc), vc.loop
+            on_track_end(vc), vc.client.loop
         ))
         print(f"DEBUG: Started playing {track.title}")
         print(f"DEBUG: vc.is_playing() -> {vc.is_playing()}")
@@ -113,7 +113,7 @@ async def on_track_end(vc: discord.VoiceClient):
                 config.PREVIOUS_TRACKS.pop(0)
 
         # Handle looping
-        if vc.loop and vc.current_track:
+        if vc.track_loop and vc.current_track:
             # Replay current track
             print(f"DEBUG: Replaying current track (loop mode)")
             await play_track(vc.ctx, vc, vc.current_track)
@@ -162,6 +162,6 @@ def get_currently_playing(vc: discord.VoiceClient) -> Optional[Track]:
 
 def disable_loops(vc: discord.VoiceClient):
     """Disables loops."""
-    vc.loop = False
+    vc.track_loop = False
     vc.loop_all = False
     config.LOOPQ = None
