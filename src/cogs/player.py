@@ -1,12 +1,12 @@
 from discord.ext import commands
 import discord
-from utils import ytb_utils, play_utils, spotify_utils
-from utils.embed_utils import EmbedGenerator
-from config import PREVIOUS_TRACKS
+
+from src.presentation.embed_utils import EmbedGenerator
+from src.utils import play_utils
+from src.utils import spotify_utils, ytb_utils
 
 
 class Player(commands.Cog):
-
     eg = EmbedGenerator()
 
     def __init__(self, bot: commands.Bot):
@@ -15,25 +15,20 @@ class Player(commands.Cog):
     @commands.Cog.listener()
     async def on_voice_state_update(self, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
         """Disconnects the bot when the last person leaves the voice channel."""
-
-        # If the bot is not in a voice channel, return.
-        if not member.guild.voice_client in self.bot.voice_clients:
+        if member.guild.voice_client not in self.bot.voice_clients:
             return
 
         if before.channel == after.channel:
             return
 
-        # If the bot is called to a voice channel first time
         if not before.channel:
             return
 
-        # If the bot is in a voice channel, disconnect.
         if member == self.bot.user and not after.channel:
             vc = member.guild.voice_client
             await vc.disconnect()
             return
 
-        # If the bot is the only one in the voice channel, disconnect.
         if len(before.channel.members) == 1 and before.channel.members[0] == self.bot.user:
             vc = member.guild.voice_client
             await vc.disconnect()
@@ -47,16 +42,13 @@ class Player(commands.Cog):
             return
 
         vc = await play_utils.get_voice_client(ctx)
-
         if not vc:
             return
 
-        if "open.spotify" in search:
+        if 'open.spotify' in search:
             await spotify_utils.play_spotify(ctx, vc, search)
         else:
-            # Plays from YouTube
             await ytb_utils.play_ytb(ctx, vc, search)
-
 
     @commands.command(aliases=['pn'])
     async def playnow(self, ctx: commands.Context, *, search):
@@ -66,35 +58,26 @@ class Player(commands.Cog):
             return
 
         vc = await play_utils.get_voice_client(ctx)
-
         if not vc:
             return
 
-        if "open.spotify" in search:
+        if 'open.spotify' in search:
             await spotify_utils.play_spotify(ctx, vc, search, now=True)
         else:
-            # Plays from YouTube
             await ytb_utils.play_ytb(ctx, vc, search, now=True)
-
 
     @commands.command()
     async def join(self, ctx: commands.Context):
         """Joins a voice channel."""
         return await play_utils.get_voice_client(ctx)
 
-
     @commands.command(aliases=['disconnect'])
     async def leave(self, ctx: commands.Context):
         """Leaves a voice channel."""
         vc = await play_utils.get_voice_client(ctx)
-
-        # If the bot is not in a voice channel, return.
         if not vc:
             return
-
-        # If the bot is in a voice channel, disconnect.
         await vc.disconnect()
-
 
     @commands.command()
     async def pause(self, ctx: commands.Context):
@@ -103,11 +86,9 @@ class Player(commands.Cog):
         if not vc:
             return
 
-        # If the bot is not playing anything, return.
         if not vc.is_playing:
             return await ctx.send('I am not playing anything.')
 
-        # Pauses the song.
         vc.pause()
         await ctx.send('**Paused**')
 
@@ -115,7 +96,6 @@ class Player(commands.Cog):
     async def resume(self, ctx: commands.Context):
         """Resumes the current song."""
         vc = await play_utils.get_voice_client(ctx)
-        # If the bot is in a voice channel, resumes
         if vc:
             vc.resume()
             await ctx.send('**Resumed**')
@@ -127,12 +107,10 @@ class Player(commands.Cog):
         if not vc:
             return
 
-        # If the bot is not playing anything, return
         if not vc.is_playing:
             return await ctx.send('I am not playing anything.')
 
-        # Gets the current song.
-        await ctx.send(embed=self.eg.now_playing(vc.current_track))
+        await ctx.send(embed=self.eg.now_playing(play_utils.get_currently_playing(vc)))
 
     @commands.command()
     async def skip(self, ctx: commands.Context):
@@ -141,12 +119,10 @@ class Player(commands.Cog):
         if not vc:
             return
 
-        # If the bot is not playing anything, return
         if not vc.is_playing:
             return await ctx.send('I am not playing anything.')
 
-        # Skips the song.
-        track = vc.current_track
+        track = play_utils.get_currently_playing(vc)
         vc.stop()
         await ctx.send(f'*Skipped* **{track.title}**')
 
@@ -160,29 +136,24 @@ class Player(commands.Cog):
         if not vc:
             return
 
-        if not vc.queue:
+        queue = play_utils.get_queue(vc)
+        if not queue:
             return await ctx.reply('*Queue is empty*')
 
-        # If the position is out of range, return
-        if pos > len(vc.queue) or pos <= 0:
-            return await ctx.reply(f'Position should be between 0 and {len(vc.queue)}')
+        if pos > len(queue) or pos <= 0:
+            return await ctx.reply(f'Position should be between 0 and {len(queue)}')
 
-        # Remove tracks from index 0 to pos-2
-        skipped_tracks = []
-        for i in range(pos - 1):
-            if vc.queue:
-                skipped_tracks.append(vc.queue.popleft())
+        for _ in range(pos - 1):
+            if queue:
+                queue.popleft()
 
-        # Skip current track
         if vc.is_playing:
             vc.stop()
 
-        # Play the track at position pos
-        if vc.queue:
-            next_track = vc.queue.popleft()
+        if queue:
+            next_track = queue.popleft()
             await play_utils.play_track(ctx, vc, next_track)
 
-        # sends a message informing about the successful skip
         await ctx.reply(f'**Skipped to position {pos}**')
 
     @commands.command()
@@ -192,140 +163,111 @@ class Player(commands.Cog):
         if not vc:
             return
 
-        # If the bot is not playing anything, return
         if not vc.is_playing:
             return await ctx.send('I am not playing anything.')
 
-        # Clears the queue, disables loops and stops the song
-        vc.queue.clear()
+        play_utils.get_queue(vc).clear()
         play_utils.disable_loops(vc)
         vc.stop()
         await ctx.send('**Stopped**')
 
-
-    @commands.command(name="recentlyplayed", aliases=['sp', 'rp', 'showprevious'])
+    @commands.command(name='recentlyplayed', aliases=['sp', 'rp', 'showprevious'])
     async def previous(self, ctx: commands.Context):
-        """
-        Shows the recently played songs.
-        """
-        # if no song has been played yet, return
-        if not PREVIOUS_TRACKS:
-            await ctx.reply("Nothing has been played yet")
+        """Shows the recently played songs."""
+        history = play_utils.get_history(ctx.guild.id)
+        if not history:
+            await ctx.reply('Nothing has been played yet')
             return
-        # sends the embed with list of recently played songs
-        await ctx.send(embed=self.eg.show_previous())
+        await ctx.send(embed=self.eg.show_previous(history))
 
     @commands.command(name='playlast', aliases=['pl'])
     async def play_last(self, ctx: commands.Context, pos: int = 1):
-        """
-        Plays the selected song from recently played songs.
-        """
-        # if no song has been played yet, return
-        if not PREVIOUS_TRACKS:
-            await ctx.reply("Nothing has been played yet")
+        """Plays the selected song from recently played songs."""
+        history = play_utils.get_history(ctx.guild.id)
+        if not history:
+            await ctx.reply('Nothing has been played yet')
             return
-        # gets the voice client
+
         vc = await play_utils.get_voice_client(ctx)
         if not vc:
             return
 
-        # if the position is out of range, return
-        if pos > len(PREVIOUS_TRACKS) or pos <= 0:
-            await ctx.reply(f"Position should be between 1 and {len(PREVIOUS_TRACKS)}")
+        if pos > len(history) or pos <= 0:
+            await ctx.reply(f'Position should be between 1 and {len(history)}')
             return
 
-        # plays the song at given
-        track = PREVIOUS_TRACKS.pop(pos-1)
+        track = history.pop(pos - 1)
         await self.playnow(ctx, search=track.url)
-
 
     @commands.command(aliases=['rem'])
     async def remove(self, ctx: commands.Context, pos: int = False):
         """Removes a song from the queue."""
-
-        # If the position is not provided, return
         if not pos:
             return await ctx.reply('Please provide a position.')
 
-        # Gets the voice client
         vc = await play_utils.get_voice_client(ctx)
         if not vc:
             return
 
-        # If the queue is empty, return
-        if not vc.queue:
+        queue = play_utils.get_queue(vc)
+        if not queue:
             return await ctx.reply('*Queue is empty*')
 
-        # If the position is out of range, return
-        if pos > len(vc.queue) or pos <= 0:
-            return await ctx.reply(f'Position should be between 1 and {len(vc.queue)}')
+        if pos > len(queue) or pos <= 0:
+            return await ctx.reply(f'Position should be between 1 and {len(queue)}')
 
-        # removing tracks at the given position
-        track = vc.queue[pos-1]
-        del vc.queue[pos-1]
+        track = queue[pos - 1]
+        del queue[pos - 1]
         await ctx.reply(f'Removed **{track.title}** from the queue.')
 
-
     @commands.command()
-    async def search(self, ctx: commands.Context, *, title: str = ""):
+    async def search(self, ctx: commands.Context, *, title: str = ''):
         """Searches for a song in the queue using the given keywords."""
-        # If the title is not provided, return
         if not title:
             await ctx.reply('Please enter a title.')
 
-        # Gets the voice client
         vc = await play_utils.get_voice_client(ctx)
         if not vc:
             return
 
-        # filter the key words from the title
-        words = title.split(' ')
-        words = [word for word in words if word not in ['the', 'a', 'an']]
+        words = [word for word in title.split(' ') if word not in ['the', 'a', 'an']]
+        queue = play_utils.get_queue(vc)
 
-        # search for the title in the queue
-        for i in range(len(vc.queue)):
-            # if the title is found, return the position
+        for i in range(len(queue)):
             for word in words:
-                if not word.lower() in vc.queue[i].title.lower():
+                if word.lower() not in queue[i].title.lower():
                     break
             else:
-                await ctx.reply(f'**{vc.queue[i].title}** is at position {i+1}')
+                await ctx.reply(f'**{queue[i].title}** is at position {i+1}')
                 return
 
-        # if the title is not found, return
         await ctx.reply(f'No song found with the title **{title}**')
-
 
     @commands.command()
     async def move(self, ctx: commands.Context, pos: int = -1, new_pos: int = -1):
         """Moves a song from one position to another."""
-        # If the position is not provided, return
         if pos == -1 or new_pos == -1:
             return await ctx.reply('Please enter a position.')
 
-        # Gets the voice client
         vc = await play_utils.get_voice_client(ctx)
         if not vc:
             return
 
-        # If the queue is empty, return
-        if vc.queue.is_empty:
+        queue = play_utils.get_queue(vc)
+        if not queue:
             return await ctx.reply('*Queue is empty*')
 
-        # If the position is out of range, return
-        if pos > vc.queue.count or pos <= 0 or new_pos > vc.queue.count or new_pos <= 0:
-            return await ctx.reply(f'Positions should be between 1 and {vc.queue.count}')
+        if pos > len(queue) or pos <= 0 or new_pos > len(queue) or new_pos <= 0:
+            return await ctx.reply(f'Positions should be between 1 and {len(queue)}')
 
-        track = vc.queue[pos-1]
-
-        # if the position is same as the new position, return
+        track = queue[pos - 1]
         if pos == new_pos:
             return await ctx.reply(f'**{track.title}** is already at position {pos}.')
 
-        # move the song at position pos to position new_pos
-        del vc.queue[pos-1]
-        vc.queue.put_at_index(new_pos-1, track)
+        del queue[pos - 1]
+        queue.insert(new_pos - 1, track)
         await ctx.reply(f'Moved **{track.title}** to position {new_pos}.')
+
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(Player(bot))

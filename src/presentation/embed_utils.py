@@ -1,8 +1,8 @@
-import discord
 import datetime
+from collections.abc import Sequence
 from typing import Any
-from config import PREVIOUS_TRACKS, PREFIX
-from discord.ext import commands
+
+import discord
 
 
 class EmbedGenerator:
@@ -14,33 +14,35 @@ class EmbedGenerator:
         pass
 
     def now_playing(self, song: Any) -> discord.Embed:
-        embed = discord.Embed(title=f"Now Playing: {song.title} :notes:",
-                              description=f"By {song.author}",
-                              color=discord.Color.green())
+        embed = discord.Embed(
+            title=f"Now Playing: {song.title} :notes:",
+            description=f"By {song.author}",
+            color=discord.Color.green(),
+        )
         duration = str(datetime.timedelta(seconds=song.duration)).lstrip("0:")
         if ':' not in duration:
             duration = f'0:{duration}'
         embed.add_field(name="Duration", value=duration, inline=True)
         return embed
 
-
     def song_queued(self, song: Any, pos: int) -> discord.Embed:
-        embed = discord.Embed(title="Song Queued",
-                            description=song.title,
-                            color=discord.Color.blue())
+        embed = discord.Embed(
+            title="Song Queued",
+            description=song.title,
+            color=discord.Color.blue(),
+        )
         embed.add_field(name="Position", value=pos, inline=True)
         return embed
 
-
     def playlist_added(self, count: int) -> discord.Embed:
-        embed = discord.Embed(title="Update Queue",
-                            description=f"{count} songs were added to the queue.",
-                            color=discord.Color.blue())
-        return embed
+        return discord.Embed(
+            title="Update Queue",
+            description=f"{count} songs were added to the queue.",
+            color=discord.Color.blue(),
+        )
 
-    def show_queue(self, vc: discord.VoiceClient) -> list[discord.Embed]:
+    def show_queue(self, songs: Sequence[Any]) -> list[discord.Embed]:
         pages = []
-        songs = list(vc.queue)
         song_count = 0
         desc = ""
         total_songs = len(songs)
@@ -62,7 +64,7 @@ class EmbedGenerator:
                 queue_embed_page = discord.Embed(
                     title=f"Queue | {total_songs} Tracks",
                     description=desc,
-                    color=discord.Color.gold()
+                    color=discord.Color.gold(),
                 )
                 pages.append(queue_embed_page)
                 desc = ""
@@ -72,16 +74,16 @@ class EmbedGenerator:
             queue_embed_page = discord.Embed(
                 title=f"Queue | {total_songs} Tracks",
                 description=desc,
-                color=discord.Color.gold())
+                color=discord.Color.gold(),
+            )
             pages.append(queue_embed_page)
 
         return pages
 
-
-    def show_previous(self):
-        desc=""
+    def show_previous(self, tracks: Sequence[Any]) -> discord.Embed:
+        desc = ""
         song_count = 0
-        for track in PREVIOUS_TRACKS:
+        for track in tracks:
             song_count += 1
             try:
                 duration = str(datetime.timedelta(seconds=track.duration)).lstrip("0:")
@@ -93,8 +95,8 @@ class EmbedGenerator:
             except AttributeError:
                 desc += f"{song_count}. {track.title}\n"
 
-        embed = discord.Embed(
-            title=f"Recently Played | {len(PREVIOUS_TRACKS)} Tracks",
+        return discord.Embed(
+            title=f"Recently Played | {len(tracks)} Tracks",
             description=desc,
-            color=discord.Color.brand_red())
-        return embed
+            color=discord.Color.brand_red(),
+        )

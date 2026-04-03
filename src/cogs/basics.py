@@ -15,7 +15,7 @@ class Basics(commands.Cog):
     async def reload(self, ctx, extension):
         "Reload a specific cog."
         async with ctx.typing():
-            self.bot.reload_extension(f'cogs.{extension}')
+            await self.bot.reload_extension(f'src.cogs.{extension}')
             print(f'Reload module {extension} successfully')
         await ctx.send(f'Reload module {extension} successfully')
 

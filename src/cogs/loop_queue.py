@@ -1,9 +1,8 @@
 from discord.ext import commands
-import discord
 
-from utils import queue_utils, play_utils
-from utils.embed_utils import EmbedGenerator
-import config
+from src.presentation.embed_utils import EmbedGenerator
+from src.utils import play_utils
+
 
 class LoopQ(commands.Cog):
     """
@@ -22,22 +21,19 @@ class LoopQ(commands.Cog):
         if not vc:
             return
 
-        # If the bot is not playing anything, return.
         if not vc.is_playing:
             return await ctx.send('I am not playing anything.')
 
-        # If the song is on loop, turn it off.
         if vc.loop_all:
             vc.loop_all = False
-            config.LOOPQ = None
+            vc.loop_queue_snapshot = []
             await ctx.send('*Loop disabled*')
-        # If the song is not on loop, turn it on.
         else:
             vc.loop_all = True
             current_track = play_utils.get_currently_playing(vc)
-            config.LOOPQ = list(vc.queue)  # Copy current queue
+            vc.loop_queue_snapshot = list(play_utils.get_queue(vc))
             if current_track:
-                config.LOOPQ.insert(0, current_track)  # Add current track to front
+                vc.loop_queue_snapshot.insert(0, current_track)
             await ctx.send('**Queue is now on loop :repeat:**')
 
     @commands.command(aliases=['l'])
@@ -47,19 +43,17 @@ class LoopQ(commands.Cog):
         if not vc:
             return
 
-        # If the bot is not playing anything, return.
         if not vc.is_playing:
             return await ctx.send('I am not playing anything.')
 
-        # If the song is on loop, turn it off.
         if vc.track_loop:
             vc.track_loop = False
             await ctx.send('**Loop disabled**')
-        # If the song is not on loop, turn it on.
         else:
             vc.track_loop = True
             current_track = play_utils.get_currently_playing(vc)
             await ctx.send(f'**Looping {current_track.title}:repeat:**')
+
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(LoopQ(bot))
