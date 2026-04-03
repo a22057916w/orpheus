@@ -10,6 +10,7 @@
 - Packaging: remove `__init__.py` marker files under `src/` and rely on namespace-package behavior for the current project layout.
 
 ### Removed
+- Legacy scripts: remove the obsolete [`scripts/youtube.py`](/f:/Code/orpheus/scripts/youtube.py) helper after the move to the current `yt-dlp` playback flow.
 - Cleanup: delete stale cache files and obsolete refactor leftovers from the old layout.
 
 ### Notes
