@@ -7,8 +7,8 @@ import discord
 from discord.ext import commands
 
 from src import config
-from src.domain.track import Track
-from src.presentation.embed_utils import EmbedGenerator
+from src.common.track import Track
+from src.common.embeds import EmbedGenerator
 
 eg = EmbedGenerator()
 MESSAGE_NOW_PLAYING = None

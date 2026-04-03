@@ -5,19 +5,15 @@
 ### Changes
 - Project structure: reorganize the codebase under `src/` and keep [`bot.py`](/f:/Code/orpheus/bot.py) as the external startup entrypoint.
 - Module layout: move music playback and source helpers into [`src/utils/play_utils.py`](/f:/Code/orpheus/src/utils/play_utils.py), [`src/utils/ytb_utils.py`](/f:/Code/orpheus/src/utils/ytb_utils.py), and [`src/utils/spotify_utils.py`](/f:/Code/orpheus/src/utils/spotify_utils.py).
-- Domain and presentation: keep core track data in [`src/domain/track.py`](/f:/Code/orpheus/src/domain/track.py) and embed helpers in [`src/presentation/embed_utils.py`](/f:/Code/orpheus/src/presentation/embed_utils.py).
+- Shared modules: keep the track model and embed helpers together in [`src/common/track.py`](/f:/Code/orpheus/src/common/track.py) and [`src/common/embeds.py`](/f:/Code/orpheus/src/common/embeds.py).
 - Imports: standardize internal references so utility modules are imported by module name and functions are accessed through module-qualified calls.
 - Packaging: remove `__init__.py` marker files under `src/` and rely on namespace-package behavior for the current project layout.
 
 ### Removed
-- Intermediate structure: remove the temporary `src/services` and `src/sources` split in favor of a single `src/utils` layer.
-- State abstraction: remove the experimental `PlayerState` model and return playback state handling to the simpler `discord.VoiceClient`-attached approach.
 - Cleanup: delete stale cache files and obsolete refactor leftovers from the old layout.
 
 ### Notes
 - This update is primarily a refactor focused on simplifying the internal project structure rather than changing user-facing behavior.
-- Runtime behavior is intended to stay the same while the internal module layout becomes simpler to navigate.
-- The current startup command remains `python bot.py`.
 
 ## 2026-03-27
 

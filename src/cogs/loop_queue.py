@@ -1,6 +1,6 @@
 from discord.ext import commands
 
-from src.presentation.embed_utils import EmbedGenerator
+from src.common.embeds import EmbedGenerator
 from src.utils import play_utils
 
 

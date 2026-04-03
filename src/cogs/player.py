@@ -1,7 +1,7 @@
 from discord.ext import commands
 import discord
 
-from src.presentation.embed_utils import EmbedGenerator
+from src.common.embeds import EmbedGenerator
 from src.utils import play_utils
 from src.utils import spotify_utils, ytb_utils
 

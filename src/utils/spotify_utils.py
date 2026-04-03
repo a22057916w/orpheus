@@ -3,7 +3,7 @@ from discord.ext import commands
 from spotipy.oauth2 import SpotifyClientCredentials
 
 from src import config
-from src.presentation.embed_utils import EmbedGenerator
+from src.common.embeds import EmbedGenerator
 from src.utils import play_utils
 from src.utils import ytb_utils
 
