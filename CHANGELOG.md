@@ -11,6 +11,7 @@
 
 ### Removed
 - Legacy scripts: remove the obsolete [`scripts/youtube.py`](/f:/Code/orpheus/scripts/youtube.py) helper after the move to the current `yt-dlp` playback flow.
+- Java runtime bundle: remove the unused `openjdk-19.0.1_windows-x64_bin` directory after dropping the old Lavalink-based setup.
 - Cleanup: delete stale cache files and obsolete refactor leftovers from the old layout.
 
 ### Notes

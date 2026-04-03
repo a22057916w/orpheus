@@ -1,21 +1,23 @@
 ## Prerequisites
-* [discord.py](https://discordpy.readthedocs.io/en/stable/intro.html) works with Python 3.8 or higher.
+* Python 3.14 or higher
+* [FFmpeg](https://ffmpeg.org/download.html) available on your system path
+* Discord and Spotify API credentials in a local `.env` file
 
 ## Installing
+1. Create and activate a virtual environment.
+2. Install dependencies with `pip install -r requirements.txt`.
+3. Create a `.env` file with:
+   * `DISCORD_TOKEN`
+   * `SPOTIFY_CLIENT_ID`
+   * `SPOTIFY_CLIENT_SECRET`
 
-## LavaLink Configuration
-### Requirements
-* Java 11* LTS or newer required
-* [OpenJDK](https://jdk.java.net/archive/) or Zulu running on Linux AMD64 is officially supported.
-* [Lavalink.jar](https://github.com/lavalink-devs/Lavalink/releases)
+## Running
+Start the bot locally with:
 
-### Server Configuration
-To configure the server, you need to modify the `application.yml` file file by downloading it from [here](https://github.com/lavalink-devs/Lavalink/blob/master/LavalinkServer/application.yml.example). 
+`python bot.py`
 
-Remember to update the **address** in the example configuration. Place the`application.yml` and `Lavalink.jar` in the working directory, usually located under the `/bin` directory in the extracted **OpenJDK**.(You have the flexibility to place the OpenJDK in your project directory or any desired location)
-
-Run with `java -jar Lavalink.jar` from the same directory.
-
-**As APIs can undergo changes over time, please referring to the [Official Docs](https://github.com/lavalink-devs/Lavalink#requirements)**
+## Notes
+* Playback now uses `discord.py` voice, `yt-dlp`, and `spotipy`.
+* Lavalink, Java, and OpenJDK are no longer required for this project.
 
 
