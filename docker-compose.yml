@@ -1,0 +1,8 @@
+services:
+  orpheus:
+    build: .
+    env_file:
+      - .env
+    environment:
+      PYTHONUNBUFFERED: "1" # Ensure the python logs are output immediately
+    restart: unless-stopped

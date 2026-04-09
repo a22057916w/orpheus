@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-04-09
+
+### Changes
+- Containerization: add a root [`Dockerfile`](/f:/Code/orpheus/Dockerfile) for building the bot into a reusable Docker image with `python:3.12-slim`.
+- Runtime setup: install `ffmpeg` in the Docker image so voice playback works without a separate host-level FFmpeg install.
+- Compose workflow: add [`docker-compose.yml`](/f:/Code/orpheus/docker-compose.yml) to standardize local container startup, `.env` loading, restart behavior, and log-friendly Python output.
+- Build context: add [`.dockerignore`](/f:/Code/orpheus/.dockerignore) so local cache files, Git metadata, and secrets are not copied into the Docker build context.
+- Documentation: expand [`README.md`](/f:/Code/orpheus/README.md) with local and Docker run instructions, log commands, and environment variable setup guidance.
+
+### Notes
+- Docker logs are configured to be easier to follow by setting `PYTHONUNBUFFERED=1` in Compose.
+- The current Docker runtime is defined separately from the local Python prerequisite notes in the project docs.
+
 ## 2026-04-03
 
 ### Changes
