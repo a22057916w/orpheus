@@ -1,18 +1,25 @@
 import asyncio
 import random
-from collections import deque
 from typing import Optional
 
 import discord
 from discord.ext import commands
 
 from src import config
+from src.common.player_state import PlayerState
 from src.common.track import Track
 from src.common.embeds import EmbedGenerator
 
 eg = EmbedGenerator()
-MESSAGE_NOW_PLAYING = None
 PREVIOUS_TRACKS: list[Track] = []
+PLAYER_STATES: dict[int, PlayerState] = {}
+
+
+def get_player_state(vc: discord.VoiceClient, ctx: commands.Context | None = None) -> PlayerState:
+    ps = PLAYER_STATES.setdefault(vc.guild.id, PlayerState())
+    if ctx is not None:
+        ps.set_context(ctx)
+    return ps
 
 
 async def get_voice_client(ctx: commands.Context) -> Optional[discord.VoiceClient]:
@@ -33,35 +40,22 @@ async def get_voice_client(ctx: commands.Context) -> Optional[discord.VoiceClien
     else:
         vc = ctx.voice_client
 
-    if not hasattr(vc, 'queue'):
-        vc.queue = deque()
-    if not hasattr(vc, 'track_loop'):
-        vc.track_loop = False
-    if not hasattr(vc, 'loop_all'):
-        vc.loop_all = False
-    if not hasattr(vc, 'current_track'):
-        vc.current_track = None
-    if not hasattr(vc, 'ctx'):
-        vc.ctx = ctx
-    if not hasattr(vc, 'loop_queue_snapshot'):
-        vc.loop_queue_snapshot = []
-
-    vc.ctx = ctx
+    get_player_state(vc, ctx)
     return vc
 
 
 async def play_track(ctx: commands.Context, vc: discord.VoiceClient, track: Track):
     """Play a Track."""
-    global MESSAGE_NOW_PLAYING
+    ps = get_player_state(vc, ctx)
 
-    if MESSAGE_NOW_PLAYING:
+    if ps.now_playing_message:
         try:
-            await MESSAGE_NOW_PLAYING.delete()
+            await ps.now_playing_message.delete()
         except:
             pass
 
-    vc.current_track = track
-    vc.ctx = ctx
+    ps.set_current_track(track)
+    ps.set_context(ctx)
 
     try:
         audio_source = discord.FFmpegPCMAudio(
@@ -89,61 +83,58 @@ async def play_track(ctx: commands.Context, vc: discord.VoiceClient, track: Trac
         return
 
     embed = eg.now_playing(track)
-    MESSAGE_NOW_PLAYING = await ctx.send(embed=embed)
+    ps.now_playing_message = await ctx.send(embed=embed)
 
 
 async def on_track_end(vc: discord.VoiceClient):
     """Called when a track ends."""
     try:
-        if vc.current_track:
-            PREVIOUS_TRACKS.append(vc.current_track)
+        ps = get_player_state(vc)
+        current_track = ps.get_current_track()
+        if current_track:
+            PREVIOUS_TRACKS.append(current_track)
             if len(PREVIOUS_TRACKS) > 10:
                 PREVIOUS_TRACKS.pop(0)
 
-        if vc.track_loop and vc.current_track:
+        if ps.is_track_loop_enabled() and current_track:
             print('DEBUG: Replaying current track (loop mode)')
-            await play_track(vc.ctx, vc, vc.current_track)
+            await play_track(ps.ctx, vc, current_track)
             return
 
-        if vc.loop_all and not vc.queue:
-            vc.queue = deque(vc.loop_queue_snapshot)
-            print(f'DEBUG: Restored loop queue, {len(vc.queue)} tracks')
+        if ps.is_queue_loop_enabled() and not ps.queue:
+            ps.restore_loop_queue_snapshot()
+            print(f'DEBUG: Restored loop queue, {len(ps.queue)} tracks')
 
-        if vc.queue:
-            next_track = vc.queue.popleft()
+        next_track = ps.pop_next_track()
+        if next_track:
             print(f'DEBUG: Playing next track from queue: {next_track.title}')
-            await play_track(vc.ctx, vc, next_track)
+            await play_track(ps.ctx, vc, next_track)
         else:
-            vc.current_track = None
+            ps.set_current_track(None)
             print('DEBUG: Queue concluded, sending message')
-            if vc.ctx:
-                await vc.ctx.send('**Queue has concluded.**')
+            if ps.ctx:
+                await ps.ctx.send('**Queue has concluded.**')
     except Exception as e:
         print(f'ERROR in on_track_end: {str(e)}')
         try:
-            if vc.ctx:
-                await vc.ctx.send(f'Error playing next track: {str(e)}')
+            ps = get_player_state(vc)
+            if ps.ctx:
+                await ps.ctx.send(f'Error playing next track: {str(e)}')
         except:
             pass
 
 
 async def play_now(ctx: commands.Context, vc: discord.VoiceClient, track: Track):
     """Plays a song immediately."""
+    ps = get_player_state(vc, ctx)
     if vc.is_playing():
         vc.stop()
-        if vc.current_track:
-            vc.queue.appendleft(vc.current_track)
+        current_track = ps.get_current_track()
+        if current_track:
+            ps.prepend_to_queue(current_track)
 
-    disable_loops(vc)
+    ps.disable_loops()
     await play_track(ctx, vc, track)
-
-
-def get_currently_playing(vc: discord.VoiceClient) -> Optional[Track]:
-    return vc.current_track
-
-
-def get_queue(vc: discord.VoiceClient):
-    return vc.queue
 
 
 def get_history(_guild_id: int | None = None) -> list[Track]:
@@ -151,13 +142,9 @@ def get_history(_guild_id: int | None = None) -> list[Track]:
 
 
 async def shuffle_queue(vc: discord.VoiceClient):
-    temp = list(vc.queue)
-    vc.queue.clear()
+    ps = get_player_state(vc)
+    temp = list(ps.queue)
+    ps.clear_queue()
     random.shuffle(temp)
-    vc.queue.extend(temp)
+    ps.queue.extend(temp)
 
-
-def disable_loops(vc: discord.VoiceClient):
-    vc.track_loop = False
-    vc.loop_all = False
-    vc.loop_queue_snapshot = []

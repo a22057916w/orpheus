@@ -61,14 +61,15 @@ async def add_playlist(ctx: commands.Context, vc, search: str):
                 await temp.edit(content='??Failed to load any tracks from playlist.')
                 return
 
+            ps = play_utils.get_player_state(vc)
             count = 0
             for track in tracks:
                 if not vc.is_playing() and count == 0:
                     await play_utils.play_track(ctx, vc, track)
                 else:
-                    vc.queue.append(track)
-                    if vc.loop_all:
-                        vc.loop_queue_snapshot.append(track)
+                    ps.append_to_queue(track)
+                    if ps.is_queue_loop_enabled():
+                        ps.append_to_loop_queue_snapshot(track)
                 count += 1
 
             await temp.delete()
@@ -99,15 +100,16 @@ async def add_song(ctx: commands.Context, vc, search: str, now: bool):
         if not vc.is_playing():
             return await play_utils.play_track(ctx, vc, track)
 
+        ps = play_utils.get_player_state(vc)
         if now:
-            play_utils.disable_loops(vc)
+            ps.disable_loops()
             return await play_utils.play_now(ctx, vc, track)
 
-        vc.queue.append(track)
-        await ctx.send(embed=eg.song_queued(track, len(vc.queue)))
+        ps.append_to_queue(track)
+        await ctx.send(embed=eg.song_queued(track, len(ps.queue)))
 
-        if vc.loop_all:
-            vc.loop_queue_snapshot.append(track)
+        if ps.is_queue_loop_enabled():
+            ps.append_to_loop_queue_snapshot(track)
 
     except Exception as e:
         print(f'ERROR in add_song: {str(e)}')

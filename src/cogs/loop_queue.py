@@ -24,16 +24,18 @@ class LoopQ(commands.Cog):
         if not vc.is_playing:
             return await ctx.send('I am not playing anything.')
 
-        if vc.loop_all:
-            vc.loop_all = False
-            vc.loop_queue_snapshot = []
+        ps = play_utils.get_player_state(vc)
+        if ps.is_queue_loop_enabled():
+            ps.set_queue_loop(False)
+            ps.set_loop_queue_snapshot([])
             await ctx.send('*Loop disabled*')
         else:
-            vc.loop_all = True
-            current_track = play_utils.get_currently_playing(vc)
-            vc.loop_queue_snapshot = list(play_utils.get_queue(vc))
+            ps.set_queue_loop(True)
+            snapshot = list(ps.queue)
+            current_track = ps.get_current_track()
             if current_track:
-                vc.loop_queue_snapshot.insert(0, current_track)
+                snapshot.insert(0, current_track)
+            ps.set_loop_queue_snapshot(snapshot)
             await ctx.send('**Queue is now on loop :repeat:**')
 
     @commands.command(aliases=['l'])
@@ -46,12 +48,13 @@ class LoopQ(commands.Cog):
         if not vc.is_playing:
             return await ctx.send('I am not playing anything.')
 
-        if vc.track_loop:
-            vc.track_loop = False
+        ps = play_utils.get_player_state(vc)
+        if ps.is_track_loop_enabled():
+            ps.set_track_loop(False)
             await ctx.send('**Loop disabled**')
         else:
-            vc.track_loop = True
-            current_track = play_utils.get_currently_playing(vc)
+            ps.set_track_loop(True)
+            current_track = ps.get_current_track()
             await ctx.send(f'**Looping {current_track.title}:repeat:**')
 
 

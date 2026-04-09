@@ -45,12 +45,13 @@ async def play_spotify_track(ctx: commands.Context, vc, track_id: str, now: bool
         if not vc.is_playing():
             return await play_utils.play_track(ctx, vc, track)
 
+        ps = play_utils.get_player_state(vc)
         if now:
-            play_utils.disable_loops(vc)
+            ps.disable_loops()
             return await play_utils.play_now(ctx, vc, track)
 
-        vc.queue.append(track)
-        embed = eg.song_queued(track, len(vc.queue))
+        ps.append_to_queue(track)
+        embed = eg.song_queued(track, len(ps.queue))
         await ctx.send(embed=embed)
 
     except Exception as e:
@@ -64,6 +65,7 @@ async def add_tracks_from_playlist(ctx: commands.Context, vc, playlist_id: str):
     try:
         results = sp.playlist_tracks(playlist_id)
         tracks = results['items']
+        ps = play_utils.get_player_state(vc)
 
         for item in tracks:
             if item['track']:
@@ -76,9 +78,9 @@ async def add_tracks_from_playlist(ctx: commands.Context, vc, playlist_id: str):
                         await play_utils.play_track(ctx, vc, track)
                         continue
 
-                    vc.queue.append(track)
-                    if vc.loop_all:
-                        vc.loop_queue_snapshot.append(track)
+                    ps.append_to_queue(track)
+                    if ps.is_queue_loop_enabled():
+                        ps.append_to_loop_queue_snapshot(track)
                     count += 1
 
         embed = eg.playlist_added(count)
@@ -97,6 +99,7 @@ async def add_tracks_from_album(ctx: commands.Context, vc, album_id: str):
     try:
         results = sp.album_tracks(album_id)
         tracks = results['items']
+        ps = play_utils.get_player_state(vc)
 
         for track_info in tracks:
             query = f"{track_info['name']} {track_info['artists'][0]['name']}"
@@ -107,9 +110,9 @@ async def add_tracks_from_album(ctx: commands.Context, vc, album_id: str):
                     await play_utils.play_track(ctx, vc, track)
                     continue
 
-                vc.queue.append(track)
-                if vc.loop_all:
-                    vc.loop_queue_snapshot.append(track)
+                ps.append_to_queue(track)
+                if ps.is_queue_loop_enabled():
+                    ps.append_to_loop_queue_snapshot(track)
                 count += 1
 
         embed = eg.playlist_added(count)

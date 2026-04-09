@@ -110,7 +110,8 @@ class Player(commands.Cog):
         if not vc.is_playing:
             return await ctx.send('I am not playing anything.')
 
-        await ctx.send(embed=self.eg.now_playing(play_utils.get_currently_playing(vc)))
+        ps = play_utils.get_player_state(vc)
+        await ctx.send(embed=self.eg.now_playing(ps.get_current_track()))
 
     @commands.command()
     async def skip(self, ctx: commands.Context):
@@ -122,7 +123,8 @@ class Player(commands.Cog):
         if not vc.is_playing:
             return await ctx.send('I am not playing anything.')
 
-        track = play_utils.get_currently_playing(vc)
+        ps = play_utils.get_player_state(vc)
+        track = ps.get_current_track()
         vc.stop()
         await ctx.send(f'*Skipped* **{track.title}**')
 
@@ -136,7 +138,8 @@ class Player(commands.Cog):
         if not vc:
             return
 
-        queue = play_utils.get_queue(vc)
+        ps = play_utils.get_player_state(vc)
+        queue = ps.queue
         if not queue:
             return await ctx.reply('*Queue is empty*')
 
@@ -166,8 +169,9 @@ class Player(commands.Cog):
         if not vc.is_playing:
             return await ctx.send('I am not playing anything.')
 
-        play_utils.get_queue(vc).clear()
-        play_utils.disable_loops(vc)
+        ps = play_utils.get_player_state(vc)
+        ps.clear_queue()
+        ps.disable_loops()
         vc.stop()
         await ctx.send('**Stopped**')
 
@@ -209,7 +213,8 @@ class Player(commands.Cog):
         if not vc:
             return
 
-        queue = play_utils.get_queue(vc)
+        ps = play_utils.get_player_state(vc)
+        queue = ps.queue
         if not queue:
             return await ctx.reply('*Queue is empty*')
 
@@ -231,7 +236,7 @@ class Player(commands.Cog):
             return
 
         words = [word for word in title.split(' ') if word not in ['the', 'a', 'an']]
-        queue = play_utils.get_queue(vc)
+        queue = play_utils.get_player_state(vc).queue
 
         for i in range(len(queue)):
             for word in words:
@@ -253,7 +258,7 @@ class Player(commands.Cog):
         if not vc:
             return
 
-        queue = play_utils.get_queue(vc)
+        queue = play_utils.get_player_state(vc).queue
         if not queue:
             return await ctx.reply('*Queue is empty*')
 
