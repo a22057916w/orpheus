@@ -1,9 +1,23 @@
 # Changelog
 
+## 2026-04-10
+
+### Changes
+- Kubernetes manifests: add [`k8s/namespace.yaml`](/f:/Code/orpheus/k8s/namespace.yaml) to define an `orpheus` namespace for isolating bot resources from the default cluster workspace.
+- Deployment config: add and iterate on [`k8s/deployment.yaml`](/f:/Code/orpheus/k8s/deployment.yaml) to run the Discord bot as a single-replica Kubernetes `Deployment` backed by the existing `orpheus:latest` container image.
+- Runtime env wiring: configure the Deployment to read `DISCORD_TOKEN`, `SPOTIFY_CLIENT_ID`, and `SPOTIFY_CLIENT_SECRET` from the `orpheus-secrets` Kubernetes `Secret`.
+- Log behavior: set `PYTHONUNBUFFERED=1` in the Deployment environment so bot startup and playback logs appear immediately through `kubectl logs`.
+- Secret template: add [`k8s/secret.example.yaml`](/f:/Code/orpheus/k8s/secret.example.yaml) as a repository-safe example of the required Kubernetes `Secret` structure and keys.
+
+### Notes
+- The current Kubernetes setup targets local learning and testing on a `kind` cluster rather than a production multi-node environment.
+- The bot is intentionally configured with a single replica because the current Discord voice and in-memory playback state are not designed for multiple concurrent bot instances using the same token.
+- Local Kubernetes secrets can be created directly from the existing `.env` file with `kubectl create secret generic orpheus-secrets --from-env-file=.env` before applying the Deployment.
+
 ## 2026-04-09
 
 ### Changes
-- Containerization: add a root [`Dockerfile`](/f:/Code/orpheus/Dockerfile) for building the bot into a reusable Docker image with `python:3.12-slim`.
+- Containerization: add a root [`Dockerfile`](/f:/Code/orpheus/Dockerfile) for building the bot into a reusable Docker image with `python:3.14-slim`.
 - Runtime setup: install `ffmpeg` in the Docker image so voice playback works without a separate host-level FFmpeg install.
 - Compose workflow: add [`docker-compose.yml`](/f:/Code/orpheus/docker-compose.yml) to standardize local container startup, `.env` loading, restart behavior, and log-friendly Python output.
 - Build context: add [`.dockerignore`](/f:/Code/orpheus/.dockerignore) so local cache files, Git metadata, and secrets are not copied into the Docker build context.

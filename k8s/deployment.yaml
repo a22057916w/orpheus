@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orpheus-bot
+  namespace: orpheus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: orpheus
+  template:
+    metadata:
+      labels:
+        app: orpheus
+    spec:
+      containers:
+      - name: orpheus
+        image: orpheus:latest
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: PYTHONUNBUFFERED
+          value: "1"
+        - name: DISCORD_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: orpheus-secrets
+              key: DISCORD_TOKEN
+        - name: SPOTIFY_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: orpheus-secrets
+              key: SPOTIFY_CLIENT_ID
+        - name: SPOTIFY_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: orpheus-secrets
+              key: SPOTIFY_CLIENT_SECRET
