@@ -6,6 +6,7 @@ import discord
 from discord.ext import commands
 
 from src import config
+from src.common.messages import ResponseMessage as RM
 from src.common.player_state import PlayerState
 from src.common.track import Track
 from src.common.embeds import EmbedGenerator
@@ -25,7 +26,7 @@ def get_player_state(vc: discord.VoiceClient, ctx: commands.Context | None = Non
 async def get_voice_client(ctx: commands.Context) -> Optional[discord.VoiceClient]:
     """Gets the voice client for the bot."""
     if not ctx.author.voice:
-        await ctx.reply(config.USER_NOT_IN_VOICE_CHANNEL)
+        await ctx.reply(RM.USER_NOT_IN_VOICE_CHANNEL)
         return None
 
     if not ctx.voice_client:
@@ -35,7 +36,7 @@ async def get_voice_client(ctx: commands.Context) -> Optional[discord.VoiceClien
             await ctx.voice_client.move_to(ctx.author.voice.channel)
             vc = ctx.voice_client
         else:
-            await ctx.reply(config.USER_NOT_IN_SAME_VOICE_CHANNEL)
+            await ctx.reply(RM.USER_NOT_IN_SAME_VOICE_CHANNEL)
             return None
     else:
         vc = ctx.voice_client
