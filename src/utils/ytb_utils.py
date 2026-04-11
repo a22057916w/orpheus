@@ -1,11 +1,6 @@
 import yt_dlp
-from discord.ext import commands
 
 from src.common.track import Track
-from src.common.embeds import EmbedGenerator
-from src.utils import play_utils
-
-eg = EmbedGenerator()
 
 YDL_OPTS = {
     'format': 'bestaudio/best',
@@ -16,98 +11,55 @@ YDL_OPTS = {
 }
 
 
-async def play_ytb(ctx: commands.Context, vc, search: str):
+async def get_tracks(search: str) -> list[Track]:
     if 'list=' in search:
-        await add_playlist(ctx, vc, search)
+        return await get_playlist_tracks(search)
+
+    if 'youtube.com' in search or 'youtu.be' in search:
+        track = await get_track_from_url(search)
     else:
-        await add_song(ctx, vc, search)
+        track = await get_track_from_search(search)
+
+    return [track] if track else []
 
 
-async def add_playlist(ctx: commands.Context, vc, search: str):
-    try:
-        temp = await ctx.send('?? Loading playlist tracks...')
+async def get_playlist_tracks(search: str) -> list[Track]:
+    with yt_dlp.YoutubeDL({'extract_flat': True, 'quiet': True, 'no_warnings': True}) as ydl:
+        print(f'DEBUG: Extracting playlist from {search}')
+        info = ydl.extract_info(search, download=False)
 
-        with yt_dlp.YoutubeDL({'extract_flat': True, 'quiet': True, 'no_warnings': True}) as ydl:
-            print(f'DEBUG: Extracting playlist from {search}')
-            info = ydl.extract_info(search, download=False)
+    entries = info.get('entries', [])
+    print(f'DEBUG: Found {len(entries)} entries in playlist')
 
-            if 'entries' not in info:
-                await temp.edit(content='??No tracks found in this playlist.')
-                return
+    tracks = []
+    for entry in entries[:50]:
+        if not entry:
+            continue
 
-            entries = info['entries']
-            print(f'DEBUG: Found {len(entries)} entries in playlist')
+        video_id = entry.get('id', '')
+        url = entry.get('url') or f'https://www.youtube.com/watch?v={video_id}'
+        if video_id and not url.startswith('http'):
+            url = f'https://www.youtube.com/watch?v={video_id}'
 
-            if not entries:
-                await temp.edit(content='??Playlist is empty.')
-                return
+        tracks.append(Track(
+            title=entry.get('title', 'Unknown'),
+            author=entry.get('uploader', 'Unknown'),
+            url=url,
+            duration=entry.get('duration', 0) or 0,
+            thumbnail=entry.get('thumbnail', ''),
+        ))
 
-            tracks = []
-            for idx, entry in enumerate(entries[:50]):
-                try:
-                    video_id = entry['id'] if isinstance(entry, dict) and 'id' in entry else entry
-                    track = await get_track_from_url(f'https://www.youtube.com/watch?v={video_id}')
-                    if track:
-                        tracks.append(track)
-                        if idx % 10 == 0:
-                            await temp.edit(content=f'?? Loading playlist tracks... ({idx+1}/{min(len(entries), 50)})')
-                except Exception as e:
-                    print(f'DEBUG: Failed to load track {idx}: {str(e)}')
-                    continue
-
-            if not tracks:
-                await temp.edit(content='??Failed to load any tracks from playlist.')
-                return
-
-            ps = play_utils.get_player_state(vc)
-            count = 0
-            for track in tracks:
-                if not vc.is_playing() and count == 0:
-                    await play_utils.play_track(ctx, vc, track)
-                else:
-                    ps.append_to_queue(track)
-                    if ps.is_queue_loop_enabled():
-                        ps.append_to_loop_queue_snapshot(track)
-                count += 1
-
-            await temp.delete()
-            await ctx.send(embed=eg.playlist_added(count))
-            print(f'DEBUG: Successfully loaded {count} tracks from playlist')
-
-    except Exception as e:
-        print(f'ERROR in add_playlist: {str(e)}')
-        try:
-            await temp.edit(content=f'??Error loading playlist: {str(e)}')
-        except:
-            await ctx.reply(f'??Error loading playlist: {str(e)}')
+    return tracks
 
 
-async def add_song(ctx: commands.Context, vc, search: str):
-    try:
-        if 'youtube.com' in search or 'youtu.be' in search:
-            print(f'DEBUG: Processing YouTube URL: {search}')
-            track = await get_track_from_url(search)
-        else:
-            print(f'DEBUG: Processing search query: {search}')
-            track = await get_track_from_search(search)
+async def resolve_track(track: Track) -> Track:
+    if not track.url:
+        return await get_track_from_search(track.search_query)
 
-        if not track:
-            await ctx.reply('??Could not find or load this video/song.')
-            return
+    if 'youtube.com' in track.url or 'youtu.be' in track.url:
+        return await get_track_from_url(track.url)
 
-        if not vc.is_playing():
-            return await play_utils.play_track(ctx, vc, track)
-
-        ps = play_utils.get_player_state(vc)
-        ps.append_to_queue(track)
-        await ctx.send(embed=eg.song_queued(track, len(ps.queue)))
-
-        if ps.is_queue_loop_enabled():
-            ps.append_to_loop_queue_snapshot(track)
-
-    except Exception as e:
-        print(f'ERROR in add_song: {str(e)}')
-        await ctx.reply(f'??Error finding song: {str(e)}')
+    return track
 
 
 async def get_track_from_search(query: str) -> Track:

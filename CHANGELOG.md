@@ -6,9 +6,11 @@
 - Docker development workflow: bind-mount [`bot.py`](/f:/Code/orpheus/bot.py) and [`src/`](/f:/Code/orpheus/src) into `/app` through [`docker-compose.yml`](/f:/Code/orpheus/docker-compose.yml) so Python source changes can be picked up with a container restart instead of a rebuild.
 - Docker image contents: replace the broad `COPY . .` runtime copy in [`Dockerfile`](/f:/Code/orpheus/Dockerfile) with targeted copies for `bot.py` and `src/`, while keeping the broad copy commented for reference.
 - Ignore rules: add local Python virtual environment folders to [`.gitignore`](/f:/Code/orpheus/.gitignore) and [`.dockerignore`](/f:/Code/orpheus/.dockerignore).
+- Playback flow: move Spotify and YouTube playback control into [`src/utils/play_utils.py`](/f:/Code/orpheus/src/utils/play_utils.py), so play requests are handled through one shared queue-first flow.
 
 ### Fixes
 - Guild playback state: store recently played tracks per Discord guild in [`src/utils/play_utils.py`](/f:/Code/orpheus/src/utils/play_utils.py) so playback history does not leak between servers.
+- Spotify errors: disable Spotipy's retry session so Spotify `429` rate limits return to bot error handling instead of blocking for long `Retry-After` waits.
 
 ### Removed
 - Immediate playback: remove the `playnow` command and related queue-bypass logic.

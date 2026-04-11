@@ -5,11 +5,11 @@ from typing import Optional
 import discord
 from discord.ext import commands
 
-from src import config
 from src.common.messages import ResponseMessage as RM
 from src.common.player_state import PlayerState
 from src.common.track import Track
 from src.common.embeds import EmbedGenerator
+from src.utils import spotify_utils, ytb_utils
 
 eg = EmbedGenerator()
 PREVIOUS_TRACKS: dict[int, list[Track]] = {}
@@ -45,9 +45,49 @@ async def get_voice_client(ctx: commands.Context) -> Optional[discord.VoiceClien
     return vc
 
 
+async def play(ctx: commands.Context, vc: discord.VoiceClient, search: str) -> None:
+    """Resolve user input into queue items and start playback when idle."""
+    try:
+        if 'open.spotify' in search:
+            tracks = await spotify_utils.get_tracks(search)
+        else:
+            tracks = await ytb_utils.get_tracks(search)
+    except Exception as e:
+        await ctx.reply(f'Error finding song: {str(e)}')
+        return
+
+    if not tracks:
+        await ctx.reply('Could not find or load any tracks.')
+        return
+
+    ps = get_player_state(vc, ctx)
+    for track in tracks:
+        ps.append_to_queue(track)
+        if ps.is_queue_loop_enabled():
+            ps.append_to_loop_queue_snapshot(track)
+
+    was_playing = vc.is_playing()
+    if not was_playing:
+        next_track = ps.pop_next_track()
+        if next_track:
+            await play_track(ctx, vc, next_track)
+
+    if len(tracks) == 1:
+        if was_playing:
+            await ctx.send(embed=eg.song_queued(tracks[0], len(ps.queue)))
+        return
+
+    await ctx.send(embed=eg.playlist_added(len(tracks)))
+
+
 async def play_track(ctx: commands.Context, vc: discord.VoiceClient, track: Track):
     """Play a Track."""
     ps = get_player_state(vc, ctx)
+
+    track = await ytb_utils.resolve_track(track)
+    if not track:
+        await ctx.send('Could not resolve this track.')
+        return
 
     if ps.now_playing_message:
         try:

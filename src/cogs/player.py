@@ -3,7 +3,6 @@ import discord
 
 from src.common.embeds import EmbedGenerator
 from src.utils import play_utils
-from src.utils import spotify_utils, ytb_utils
 
 
 class Player(commands.Cog):
@@ -45,10 +44,7 @@ class Player(commands.Cog):
         if not vc:
             return
 
-        if 'open.spotify' in search:
-            await spotify_utils.play_spotify(ctx, vc, search)
-        else:
-            await ytb_utils.play_ytb(ctx, vc, search)
+        await play_utils.play(ctx, vc, search)
 
     @commands.command()
     async def join(self, ctx: commands.Context):

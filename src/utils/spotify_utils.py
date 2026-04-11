@@ -1,116 +1,100 @@
 import spotipy
-from discord.ext import commands
-from spotipy.oauth2 import SpotifyClientCredentials
+from spotipy import SpotifyException
+from spotipy.oauth2 import SpotifyClientCredentials, SpotifyOauthError
 
 from src import config
-from src.common.embeds import EmbedGenerator
-from src.utils import play_utils
-from src.utils import ytb_utils
+from src.common.track import Track
 
-eg = EmbedGenerator()
-
-sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials(
-    client_id=config.SPOTIFY_CLIENT_ID,
-    client_secret=config.SPOTIFY_CLIENT_SECRET,
-))
-
-
-async def play_spotify(ctx: commands.Context, vc, search: str):
-    try:
-        if 'spotify.com/track/' in search:
-            track_id = search.split('track/')[1].split('?')[0]
-            await play_spotify_track(ctx, vc, track_id)
-        elif 'spotify.com/playlist/' in search:
-            playlist_id = search.split('playlist/')[1].split('?')[0]
-            await add_tracks_from_playlist(ctx, vc, playlist_id)
-        elif 'spotify.com/album/' in search:
-            album_id = search.split('album/')[1].split('?')[0]
-            await add_tracks_from_album(ctx, vc, album_id)
-        else:
-            await ctx.reply('Invalid Spotify URL')
-    except Exception as e:
-        await ctx.reply(f'Error processing Spotify URL: {str(e)}')
+sp = spotipy.Spotify(
+    auth_manager=SpotifyClientCredentials(
+        client_id=config.SPOTIFY_CLIENT_ID,
+        client_secret=config.SPOTIFY_CLIENT_SECRET,
+        requests_session=False  # Disable retry for token requests.
+    ),
+    # Disable retry for Spotify API requests so 429 returns control immediately.
+    requests_session=False,
+)
 
 
-async def play_spotify_track(ctx: commands.Context, vc, track_id: str):
+async def get_tracks(search: str) -> list[Track]:
+    if 'spotify.com/track/' in search:
+        track_id = search.split('track/')[1].split('?')[0]
+        return [get_track(track_id)]
+
+    if 'spotify.com/playlist/' in search:
+        playlist_id = search.split('playlist/')[1].split('?')[0]
+        return get_playlist_tracks(playlist_id)
+
+    if 'spotify.com/album/' in search:
+        album_id = search.split('album/')[1].split('?')[0]
+        return get_album_tracks(album_id)
+
+    raise ValueError('Invalid Spotify URL')
+
+
+def get_track(track_id: str) -> Track:
     try:
         track_info = sp.track(track_id)
-        query = f"{track_info['name']} {track_info['artists'][0]['name']}"
-        track = await ytb_utils.get_track_from_search(query)
-
-        if not vc.is_playing():
-            return await play_utils.play_track(ctx, vc, track)
-
-        ps = play_utils.get_player_state(vc)
-        ps.append_to_queue(track)
-        embed = eg.song_queued(track, len(ps.queue))
-        await ctx.send(embed=embed)
-
+    except SpotifyException as e:
+        raise Exception(f'Unable to load Spotify track: {spotify_error_message(e)}') from e
+    except SpotifyOauthError as e:
+        raise Exception(f'Unable to authenticate with Spotify: {str(e)}') from e
     except Exception as e:
-        await ctx.reply(f'Error playing Spotify track: {str(e)}')
+        raise Exception(f'Unable to load Spotify track: {str(e)}') from e
+
+    return track_from_spotify(track_info)
 
 
-async def add_tracks_from_playlist(ctx: commands.Context, vc, playlist_id: str):
-    count = 0
-    temp_msg = await ctx.send('Loading tracks...')
-
+def get_playlist_tracks(playlist_id: str) -> list[Track]:
     try:
         results = sp.playlist_tracks(playlist_id)
-        tracks = results['items']
-        ps = play_utils.get_player_state(vc)
-
-        for item in tracks:
-            if item['track']:
-                track_info = item['track']
-                query = f"{track_info['name']} {track_info['artists'][0]['name']}"
-                track = await ytb_utils.get_track_from_search(query)
-
-                if track:
-                    if not vc.is_playing():
-                        await play_utils.play_track(ctx, vc, track)
-                        continue
-
-                    ps.append_to_queue(track)
-                    if ps.is_queue_loop_enabled():
-                        ps.append_to_loop_queue_snapshot(track)
-                    count += 1
-
-        embed = eg.playlist_added(count)
-        await temp_msg.delete()
-        await ctx.send(embed=embed)
-
+    except SpotifyException as e:
+        raise Exception(f'Unable to load Spotify playlist: {spotify_error_message(e)}') from e
+    except SpotifyOauthError as e:
+        raise Exception(f'Unable to authenticate with Spotify: {str(e)}') from e
     except Exception as e:
-        await temp_msg.delete()
-        await ctx.reply(f'Error loading playlist: {str(e)}')
+        raise Exception(f'Unable to load Spotify playlist: {str(e)}') from e
+
+    return [
+        track_from_spotify(item['track'])
+        for item in results['items']
+        if item.get('track')
+    ]
 
 
-async def add_tracks_from_album(ctx: commands.Context, vc, album_id: str):
-    count = 0
-    temp_msg = await ctx.send('Loading tracks...')
-
+def get_album_tracks(album_id: str) -> list[Track]:
     try:
         results = sp.album_tracks(album_id)
-        tracks = results['items']
-        ps = play_utils.get_player_state(vc)
-
-        for track_info in tracks:
-            query = f"{track_info['name']} {track_info['artists'][0]['name']}"
-            track = await ytb_utils.get_track_from_search(query)
-
-            if track:
-                if not vc.is_playing():
-                    await play_utils.play_track(ctx, vc, track)
-                    continue
-
-                ps.append_to_queue(track)
-                if ps.is_queue_loop_enabled():
-                    ps.append_to_loop_queue_snapshot(track)
-                count += 1
-
-        embed = eg.playlist_added(count)
-        await temp_msg.delete()
-        await ctx.send(embed=embed)
-
+    except SpotifyException as e:
+        raise Exception(f'Unable to load Spotify album: {spotify_error_message(e)}') from e
+    except SpotifyOauthError as e:
+        raise Exception(f'Unable to authenticate with Spotify: {str(e)}') from e
     except Exception as e:
-        await temp_msg.delete()
-        await ctx.reply(f'Error loading album: {str(e)}')
+        raise Exception(f'Unable to load Spotify album: {str(e)}') from e
+
+    return [track_from_spotify(track_info) for track_info in results['items']]
+
+
+def spotify_error_message(error: SpotifyException) -> str:
+    if error.http_status == 429:
+        retry_after = error.headers.get('Retry-After')
+        if retry_after:
+            return f'Spotify rate limit reached. Try again after {retry_after} seconds.'
+        return 'Spotify rate limit reached. Try again later.'
+
+    return error.msg
+
+
+def track_from_spotify(track_info: dict) -> Track:
+    artists = ', '.join(artist['name'] for artist in track_info.get('artists', []))
+    duration = track_info.get('duration_ms', 0) // 1000
+    images = track_info.get('album', {}).get('images', [])
+    thumbnail = images[0]['url'] if images else None
+    
+    return Track(
+        title=track_info.get('name', 'Unknown'),
+        author=artists or 'Unknown',
+        url='',
+        duration=duration,
+        thumbnail=thumbnail,
+    )

@@ -10,3 +10,7 @@ class Track:
 
     def __str__(self) -> str:
         return f"{self.title} by {self.author}"
+
+    @property
+    def search_query(self) -> str:
+        return f"{self.title} {self.author}".strip()
