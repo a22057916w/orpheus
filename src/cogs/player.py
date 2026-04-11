@@ -50,22 +50,6 @@ class Player(commands.Cog):
         else:
             await ytb_utils.play_ytb(ctx, vc, search)
 
-    @commands.command(aliases=['pn'])
-    async def playnow(self, ctx: commands.Context, *, search):
-        """Plays a song now."""
-        if not search:
-            await ctx.reply('Please enter a search query.')
-            return
-
-        vc = await play_utils.get_voice_client(ctx)
-        if not vc:
-            return
-
-        if 'open.spotify' in search:
-            await spotify_utils.play_spotify(ctx, vc, search, now=True)
-        else:
-            await ytb_utils.play_ytb(ctx, vc, search, now=True)
-
     @commands.command()
     async def join(self, ctx: commands.Context):
         """Joins a voice channel."""
@@ -201,7 +185,13 @@ class Player(commands.Cog):
             return
 
         track = history.pop(pos - 1)
-        await self.playnow(ctx, search=track.url)
+        if not vc.is_playing():
+            await play_utils.play_track(ctx, vc, track)
+            return
+
+        ps = play_utils.get_player_state(vc)
+        ps.append_to_queue(track)
+        await ctx.send(embed=self.eg.song_queued(track, len(ps.queue)))
 
     @commands.command(aliases=['rem'])
     async def remove(self, ctx: commands.Context, pos: int = False):

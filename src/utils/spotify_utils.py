@@ -15,19 +15,15 @@ sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials(
 ))
 
 
-async def play_spotify(ctx: commands.Context, vc, search: str, now=False):
+async def play_spotify(ctx: commands.Context, vc, search: str):
     try:
         if 'spotify.com/track/' in search:
             track_id = search.split('track/')[1].split('?')[0]
-            await play_spotify_track(ctx, vc, track_id, now)
+            await play_spotify_track(ctx, vc, track_id)
         elif 'spotify.com/playlist/' in search:
-            if now:
-                return await ctx.reply('Playnow command can only take in single songs.')
             playlist_id = search.split('playlist/')[1].split('?')[0]
             await add_tracks_from_playlist(ctx, vc, playlist_id)
         elif 'spotify.com/album/' in search:
-            if now:
-                return await ctx.reply('Playnow command can only take in single songs.')
             album_id = search.split('album/')[1].split('?')[0]
             await add_tracks_from_album(ctx, vc, album_id)
         else:
@@ -36,7 +32,7 @@ async def play_spotify(ctx: commands.Context, vc, search: str, now=False):
         await ctx.reply(f'Error processing Spotify URL: {str(e)}')
 
 
-async def play_spotify_track(ctx: commands.Context, vc, track_id: str, now: bool):
+async def play_spotify_track(ctx: commands.Context, vc, track_id: str):
     try:
         track_info = sp.track(track_id)
         query = f"{track_info['name']} {track_info['artists'][0]['name']}"
@@ -46,10 +42,6 @@ async def play_spotify_track(ctx: commands.Context, vc, track_id: str, now: bool
             return await play_utils.play_track(ctx, vc, track)
 
         ps = play_utils.get_player_state(vc)
-        if now:
-            ps.disable_loops()
-            return await play_utils.play_now(ctx, vc, track)
-
         ps.append_to_queue(track)
         embed = eg.song_queued(track, len(ps.queue))
         await ctx.send(embed=embed)

@@ -16,13 +16,11 @@ YDL_OPTS = {
 }
 
 
-async def play_ytb(ctx: commands.Context, vc, search: str, now=False):
+async def play_ytb(ctx: commands.Context, vc, search: str):
     if 'list=' in search:
-        if now:
-            return await ctx.reply('Playnow command can only take in single songs.')
         await add_playlist(ctx, vc, search)
     else:
-        await add_song(ctx, vc, search, now)
+        await add_song(ctx, vc, search)
 
 
 async def add_playlist(ctx: commands.Context, vc, search: str):
@@ -84,7 +82,7 @@ async def add_playlist(ctx: commands.Context, vc, search: str):
             await ctx.reply(f'??Error loading playlist: {str(e)}')
 
 
-async def add_song(ctx: commands.Context, vc, search: str, now: bool):
+async def add_song(ctx: commands.Context, vc, search: str):
     try:
         if 'youtube.com' in search or 'youtu.be' in search:
             print(f'DEBUG: Processing YouTube URL: {search}')
@@ -101,10 +99,6 @@ async def add_song(ctx: commands.Context, vc, search: str, now: bool):
             return await play_utils.play_track(ctx, vc, track)
 
         ps = play_utils.get_player_state(vc)
-        if now:
-            ps.disable_loops()
-            return await play_utils.play_now(ctx, vc, track)
-
         ps.append_to_queue(track)
         await ctx.send(embed=eg.song_queued(track, len(ps.queue)))
 

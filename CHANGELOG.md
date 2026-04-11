@@ -10,6 +10,9 @@
 ### Fixes
 - Guild playback state: store recently played tracks per Discord guild in [`src/utils/play_utils.py`](/f:/Code/orpheus/src/utils/play_utils.py) so playback history does not leak between servers.
 
+### Removed
+- Immediate playback: remove the `playnow` command and related queue-bypass logic.
+
 ### Notes
 - Rebuild the image after `Dockerfile`, `requirements.txt`, or dependency changes.
 - Restart the Compose service after Python-only source changes with `docker compose restart`.

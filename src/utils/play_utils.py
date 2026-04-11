@@ -126,19 +126,6 @@ async def on_track_end(vc: discord.VoiceClient):
             pass
 
 
-async def play_now(ctx: commands.Context, vc: discord.VoiceClient, track: Track):
-    """Plays a song immediately."""
-    ps = get_player_state(vc, ctx)
-    if vc.is_playing():
-        vc.stop()
-        current_track = ps.get_current_track()
-        if current_track:
-            ps.prepend_to_queue(current_track)
-
-    ps.disable_loops()
-    await play_track(ctx, vc, track)
-
-
 def get_history(guild_id: int) -> list[Track]:
     return PREVIOUS_TRACKS.setdefault(guild_id, [])
 
