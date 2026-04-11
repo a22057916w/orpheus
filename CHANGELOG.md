@@ -1,13 +1,24 @@
 # Changelog
 
+## 2026-04-11
+
+### Changes
+- Docker development workflow: bind-mount [`bot.py`](/f:/Code/orpheus/bot.py) and [`src/`](/f:/Code/orpheus/src) into `/app` through [`docker-compose.yml`](/f:/Code/orpheus/docker-compose.yml) so Python source changes can be picked up with a container restart instead of a rebuild.
+- Docker image contents: replace the broad `COPY . .` runtime copy in [`Dockerfile`](/f:/Code/orpheus/Dockerfile) with targeted copies for `bot.py` and `src/`, while keeping the broad copy commented for reference.
+- Ignore rules: add local Python virtual environment folders to [`.gitignore`](/f:/Code/orpheus/.gitignore) and [`.dockerignore`](/f:/Code/orpheus/.dockerignore).
+
+### Notes
+- Rebuild the image after `Dockerfile`, `requirements.txt`, or dependency changes.
+- Restart the Compose service after Python-only source changes with `docker compose restart`.
+
 ## 2026-04-10
 
 ### Changes
 - Kubernetes manifests: add [`k8s/namespace.yaml`](/f:/Code/orpheus/k8s/namespace.yaml) to define an `orpheus` namespace for isolating bot resources from the default cluster workspace.
 - Deployment config: add and iterate on [`k8s/deployment.yaml`](/f:/Code/orpheus/k8s/deployment.yaml) to run the Discord bot as a single-replica Kubernetes `Deployment` backed by the existing `orpheus:latest` container image.
 - Runtime env wiring: configure the Deployment to read `DISCORD_TOKEN`, `SPOTIFY_CLIENT_ID`, and `SPOTIFY_CLIENT_SECRET` from the `orpheus-secrets` Kubernetes `Secret`.
-- Log behavior: set `PYTHONUNBUFFERED=1` in the Deployment environment so bot startup and playback logs appear immediately through `kubectl logs`.
 - Secret template: add [`k8s/secret.example.yaml`](/f:/Code/orpheus/k8s/secret.example.yaml) as a repository-safe example of the required Kubernetes `Secret` structure and keys.
+- Log behavior: set `PYTHONUNBUFFERED=1` in the Deployment environment so bot startup and playback logs appear immediately through `kubectl logs`.
 
 ### Notes
 - The current Kubernetes setup targets local learning and testing on a `kind` cluster rather than a production multi-node environment.

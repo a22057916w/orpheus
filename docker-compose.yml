@@ -4,5 +4,8 @@ services:
     env_file:
       - .env
     environment:
-      PYTHONUNBUFFERED: "1" # Ensure the python logs are output immediately
+      PYTHONUNBUFFERED: "1"  # Ensure Python logs are flushed immediately in Docker Compose
+    volumes:
+      - ./bot.py:/app/bot.py  # Mount the entrypoint for faster local development
+      - ./src:/app/src        # Mount source modules without exposing the whole repository
     restart: unless-stopped

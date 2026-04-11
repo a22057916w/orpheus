@@ -8,6 +8,10 @@ COPY requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+# Broad copy kept for reference. It is convenient, but it also includes docs,
+# Kubernetes manifests, and other files that are not needed at runtime.
+# COPY . .
+COPY bot.py .
+COPY src ./src
 
 CMD ["python", "bot.py"]

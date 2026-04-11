@@ -3,3 +3,10 @@ openjdk-19.0.1_windows-x64_bin/
 .env
 *.pyc
 .cache
+
+# Local Python virtual environments
+.venv/
+venv/
+
+sql_test.py
+*.csv

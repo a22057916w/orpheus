@@ -3,5 +3,10 @@ __pycache__
 *.pyc
 .env
 .cache
+
+# Local Python virtual environments
+.venv
+venv
+
 sql_test.py
-spotify.csv
+*.csv
