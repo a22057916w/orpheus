@@ -7,6 +7,9 @@
 - Docker image contents: replace the broad `COPY . .` runtime copy in [`Dockerfile`](/f:/Code/orpheus/Dockerfile) with targeted copies for `bot.py` and `src/`, while keeping the broad copy commented for reference.
 - Ignore rules: add local Python virtual environment folders to [`.gitignore`](/f:/Code/orpheus/.gitignore) and [`.dockerignore`](/f:/Code/orpheus/.dockerignore).
 
+### Fixes
+- Guild playback state: store recently played tracks per Discord guild in [`src/utils/play_utils.py`](/f:/Code/orpheus/src/utils/play_utils.py) so playback history does not leak between servers.
+
 ### Notes
 - Rebuild the image after `Dockerfile`, `requirements.txt`, or dependency changes.
 - Restart the Compose service after Python-only source changes with `docker compose restart`.
