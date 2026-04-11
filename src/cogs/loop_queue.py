@@ -21,7 +21,7 @@ class LoopQ(commands.Cog):
         if not vc:
             return
 
-        if not vc.is_playing:
+        if not vc.is_playing():
             return await ctx.send('I am not playing anything.')
 
         ps = play_utils.get_player_state(vc)
@@ -45,7 +45,7 @@ class LoopQ(commands.Cog):
         if not vc:
             return
 
-        if not vc.is_playing:
+        if not vc.is_playing():
             return await ctx.send('I am not playing anything.')
 
         ps = play_utils.get_player_state(vc)

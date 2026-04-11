@@ -11,7 +11,7 @@ from src.common.track import Track
 from src.common.embeds import EmbedGenerator
 
 eg = EmbedGenerator()
-PREVIOUS_TRACKS: list[Track] = []
+PREVIOUS_TRACKS: dict[int, list[Track]] = {}
 PLAYER_STATES: dict[int, PlayerState] = {}
 
 
@@ -31,7 +31,7 @@ async def get_voice_client(ctx: commands.Context) -> Optional[discord.VoiceClien
     if not ctx.voice_client:
         vc = await ctx.author.voice.channel.connect()
     elif ctx.voice_client.channel != ctx.author.voice.channel:
-        if not ctx.voice_client.is_playing:
+        if not ctx.voice_client.is_playing():
             await ctx.voice_client.move_to(ctx.author.voice.channel)
             vc = ctx.voice_client
         else:
@@ -92,9 +92,10 @@ async def on_track_end(vc: discord.VoiceClient):
         ps = get_player_state(vc)
         current_track = ps.get_current_track()
         if current_track:
-            PREVIOUS_TRACKS.append(current_track)
-            if len(PREVIOUS_TRACKS) > 10:
-                PREVIOUS_TRACKS.pop(0)
+            history = PREVIOUS_TRACKS.setdefault(vc.guild.id, [])
+            history.append(current_track)
+            if len(history) > 10:
+                history.pop(0)
 
         if ps.is_track_loop_enabled() and current_track:
             print('DEBUG: Replaying current track (loop mode)')
@@ -137,8 +138,8 @@ async def play_now(ctx: commands.Context, vc: discord.VoiceClient, track: Track)
     await play_track(ctx, vc, track)
 
 
-def get_history(_guild_id: int | None = None) -> list[Track]:
-    return PREVIOUS_TRACKS
+def get_history(guild_id: int) -> list[Track]:
+    return PREVIOUS_TRACKS.setdefault(guild_id, [])
 
 
 async def shuffle_queue(vc: discord.VoiceClient):

@@ -86,7 +86,7 @@ class Player(commands.Cog):
         if not vc:
             return
 
-        if not vc.is_playing:
+        if not vc.is_playing():
             return await ctx.send('I am not playing anything.')
 
         vc.pause()
@@ -107,7 +107,7 @@ class Player(commands.Cog):
         if not vc:
             return
 
-        if not vc.is_playing:
+        if not vc.is_playing():
             return await ctx.send('I am not playing anything.')
 
         ps = play_utils.get_player_state(vc)
@@ -120,7 +120,7 @@ class Player(commands.Cog):
         if not vc:
             return
 
-        if not vc.is_playing:
+        if not vc.is_playing():
             return await ctx.send('I am not playing anything.')
 
         ps = play_utils.get_player_state(vc)
@@ -150,7 +150,7 @@ class Player(commands.Cog):
             if queue:
                 queue.popleft()
 
-        if vc.is_playing:
+        if vc.is_playing():
             vc.stop()
 
         if queue:
@@ -166,7 +166,7 @@ class Player(commands.Cog):
         if not vc:
             return
 
-        if not vc.is_playing:
+        if not vc.is_playing():
             return await ctx.send('I am not playing anything.')
 
         ps = play_utils.get_player_state(vc)
