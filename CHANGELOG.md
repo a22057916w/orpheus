@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-04-13
+
+### Changes
+- Playback queue: refactor [`src/common/player_state.py`](/f:/Code/orpheus/src/common/player_state.py) and [`src/utils/play_utils.py`](/f:/Code/orpheus/src/utils/play_utils.py) to keep one queue with a `current_index` playback cursor instead of popping tracks as they play.
+- Queue state: remove the separate loop queue snapshot so songs, playlists, queue loop, remove, and shuffle all operate on the same queue source of truth.
+- Queue loop: update loop progression so queue loop advances through the same queue and wraps back to the first track at the end.
+- Loop command: merge queue loop and song loop into the `loop` command in [`src/cogs/player.py`](/f:/Code/orpheus/src/cogs/player.py), cycling through queue loop, song loop, and loop off.
+
+### Removed
+- Player commands: remove the `skipto` and `move` commands from [`src/cogs/player.py`](/f:/Code/orpheus/src/cogs/player.py).
+- Loop cog: remove [`src/cogs/loop_queue.py`](/f:/Code/orpheus/src/cogs/loop_queue.py) after merging its command into the player cog.
+
 ## 2026-04-11
 
 ### Changes

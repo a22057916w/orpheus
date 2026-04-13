@@ -61,16 +61,17 @@ async def play(ctx: commands.Context, vc: discord.VoiceClient, search: str) -> N
         return
 
     ps = get_player_state(vc, ctx)
+
+    # len(queue) before appending is where the first new track will land.
+    start_index = len(ps.queue)
+    
     for track in tracks:
         ps.append_to_queue(track)
-        if ps.is_queue_loop_enabled():
-            ps.append_to_loop_queue_snapshot(track)
 
     was_playing = vc.is_playing()
     if not was_playing:
-        next_track = ps.pop_next_track()
-        if next_track:
-            await play_track(ctx, vc, next_track)
+        ps.set_current_index(start_index)
+        await play_track(ctx, vc, tracks[0])
 
     if len(tracks) == 1:
         if was_playing:
@@ -96,6 +97,7 @@ async def play_track(ctx: commands.Context, vc: discord.VoiceClient, track: Trac
             pass
 
     ps.set_current_track(track)
+    ps.update_current_queue_track(track)
     ps.set_context(ctx)
 
     try:
@@ -143,11 +145,7 @@ async def on_track_end(vc: discord.VoiceClient):
             await play_track(ps.ctx, vc, current_track)
             return
 
-        if ps.is_queue_loop_enabled() and not ps.queue:
-            ps.restore_loop_queue_snapshot()
-            print(f'DEBUG: Restored loop queue, {len(ps.queue)} tracks')
-
-        next_track = ps.pop_next_track()
+        next_track = ps.advance_to_next_track()
         if next_track:
             print(f'DEBUG: Playing next track from queue: {next_track.title}')
             await play_track(ps.ctx, vc, next_track)
@@ -172,8 +170,17 @@ def get_history(guild_id: int) -> list[Track]:
 
 async def shuffle_queue(vc: discord.VoiceClient):
     ps = get_player_state(vc)
-    temp = list(ps.queue)
-    ps.clear_queue()
-    random.shuffle(temp)
-    ps.queue.extend(temp)
+    current_index = ps.get_current_index()
+    if current_index is None:
+        temp = list(ps.queue)
+        ps.clear_queue()
+        random.shuffle(temp)
+        ps.queue.extend(temp)
+        return
+
+    upcoming = list(ps.queue)[current_index + 1:]
+    random.shuffle(upcoming)
+    ps.queue = ps.queue.__class__(
+        list(ps.queue)[:current_index + 1] + upcoming
+    )
 

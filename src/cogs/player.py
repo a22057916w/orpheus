@@ -108,36 +108,29 @@ class Player(commands.Cog):
         vc.stop()
         await ctx.send(f'*Skipped* **{track.title}**')
 
-    @commands.command(aliases=['st'])
-    async def skipto(self, ctx: commands.Context, pos: int = False):
-        """Skips to a position in the queue."""
-        if not pos:
-            return await ctx.reply('Please enter a position.')
-
+    @commands.command(aliases=['l', 'loopq', 'lq'])
+    async def loop(self, ctx: commands.Context):
+        """Cycles between queue loop, song loop, and loop off."""
         vc = await play_utils.get_voice_client(ctx)
         if not vc:
             return
 
+        if not vc.is_playing():
+            return await ctx.send('I am not playing anything.')
+
         ps = play_utils.get_player_state(vc)
-        queue = ps.queue
-        if not queue:
-            return await ctx.reply('*Queue is empty*')
-
-        if pos > len(queue) or pos <= 0:
-            return await ctx.reply(f'Position should be between 0 and {len(queue)}')
-
-        for _ in range(pos - 1):
-            if queue:
-                queue.popleft()
-
-        if vc.is_playing():
-            vc.stop()
-
-        if queue:
-            next_track = queue.popleft()
-            await play_utils.play_track(ctx, vc, next_track)
-
-        await ctx.reply(f'**Skipped to position {pos}**')
+        if not ps.is_queue_loop_enabled() and not ps.is_track_loop_enabled():
+            ps.set_queue_loop(True)
+            ps.set_track_loop(False)
+            await ctx.send('**Queue is now on loop :repeat:**')
+        elif ps.is_queue_loop_enabled():
+            ps.set_queue_loop(False)
+            ps.set_track_loop(True)
+            current_track = ps.get_current_track()
+            await ctx.send(f'**Looping {current_track.title}:repeat:**')
+        else:
+            ps.disable_loops()
+            await ctx.send('**Loop disabled**')
 
     @commands.command()
     async def stop(self, ctx: commands.Context):
@@ -181,12 +174,14 @@ class Player(commands.Cog):
             return
 
         track = history.pop(pos - 1)
+        ps = play_utils.get_player_state(vc)
+        start_index = len(ps.queue)
+        ps.append_to_queue(track)
         if not vc.is_playing():
+            ps.set_current_index(start_index)
             await play_utils.play_track(ctx, vc, track)
             return
 
-        ps = play_utils.get_player_state(vc)
-        ps.append_to_queue(track)
         await ctx.send(embed=self.eg.song_queued(track, len(ps.queue)))
 
     @commands.command(aliases=['rem'])
@@ -207,8 +202,13 @@ class Player(commands.Cog):
         if pos > len(queue) or pos <= 0:
             return await ctx.reply(f'Position should be between 1 and {len(queue)}')
 
-        track = queue[pos - 1]
-        del queue[pos - 1]
+        removed_index = pos - 1
+        was_current = ps.get_current_index() == removed_index
+        track = ps.remove_from_queue(removed_index)
+        if was_current:
+            ps.set_track_loop(False)
+            if vc.is_playing():
+                vc.stop()
         await ctx.reply(f'Removed **{track.title}** from the queue.')
 
     @commands.command()
@@ -233,31 +233,6 @@ class Player(commands.Cog):
                 return
 
         await ctx.reply(f'No song found with the title **{title}**')
-
-    @commands.command()
-    async def move(self, ctx: commands.Context, pos: int = -1, new_pos: int = -1):
-        """Moves a song from one position to another."""
-        if pos == -1 or new_pos == -1:
-            return await ctx.reply('Please enter a position.')
-
-        vc = await play_utils.get_voice_client(ctx)
-        if not vc:
-            return
-
-        queue = play_utils.get_player_state(vc).queue
-        if not queue:
-            return await ctx.reply('*Queue is empty*')
-
-        if pos > len(queue) or pos <= 0 or new_pos > len(queue) or new_pos <= 0:
-            return await ctx.reply(f'Positions should be between 1 and {len(queue)}')
-
-        track = queue[pos - 1]
-        if pos == new_pos:
-            return await ctx.reply(f'**{track.title}** is already at position {pos}.')
-
-        del queue[pos - 1]
-        queue.insert(new_pos - 1, track)
-        await ctx.reply(f'Moved **{track.title}** to position {new_pos}.')
 
 
 async def setup(bot: commands.Bot):
