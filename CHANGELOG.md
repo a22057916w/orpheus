@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-04-14
+
+### Changes
+- Spotify support: replace `spotipy` with direct Spotify Web API calls in [`src/utils/spotify_utils.py`](/f:/Code/orpheus/src/utils/spotify_utils.py), including client credentials token caching and paginated playlist/album loading.
+
+### Removed
+- Dependencies: remove `spotipy` from [`requirements.txt`](/f:/Code/orpheus/requirements.txt).
+
 ## 2026-04-13
 
 ### Changes

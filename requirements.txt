@@ -3,5 +3,5 @@ discord.py >= 2.3.0
 discord.py[voice]
 discord.py-pagination==0.0.5
 yt-dlp
-spotipy
+requests
 python-dotenv

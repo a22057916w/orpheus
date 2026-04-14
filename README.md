@@ -1,5 +1,5 @@
 ## Overview
-Orpheus is a Discord music bot built with `discord.py` voice, `yt-dlp`, and `spotipy`.
+Orpheus is a Discord music bot built with `discord.py` voice, `yt-dlp`, and Spotify Web API calls.
 
 ## Prerequisites
 * Python 3.14 or higher
@@ -60,8 +60,7 @@ The included Kubernetes setup:
 * keeps Python logs unbuffered by setting `PYTHONUNBUFFERED=1`
 
 ## Notes
-* Playback uses `discord.py` voice, `yt-dlp`, and `spotipy`.
+* Playback uses `discord.py` voice, `yt-dlp`, and Spotify Web API calls.
 * Lavalink, Java, and OpenJDK are no longer required for this project.
 * `.env` is intentionally excluded from Docker build context through `.dockerignore`.
 * Run only one copy of the bot at a time. Stop the Docker Compose container before starting the Kubernetes Deployment with the same Discord token.
-

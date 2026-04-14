@@ -53,6 +53,7 @@ async def play(ctx: commands.Context, vc: discord.VoiceClient, search: str) -> N
         else:
             tracks = await ytb_utils.get_tracks(search)
     except Exception as e:
+        print(f'ERROR finding song: {str(e)}')
         await ctx.reply(f'Error finding song: {str(e)}')
         return
 
@@ -183,4 +184,3 @@ async def shuffle_queue(vc: discord.VoiceClient):
     ps.queue = ps.queue.__class__(
         list(ps.queue)[:current_index + 1] + upcoming
     )
-
