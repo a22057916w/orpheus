@@ -1,75 +1,27 @@
-import re
+import asyncio
 
 import discord
 from discord.ext import commands
+
+from src.utils import llm_utils
 
 
 class Message(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    def _looks_like_natural_language_command(self, content: str) -> bool:
-        # Step 2 spike: keep the trigger detection simple so we can validate
-        # the wiring from a plain message into the existing command system.
-        if not content:
-            return False
-
-        trigger_patterns = [
-            r"^播放.+",
-            r"^幫我暫停$",
-            r"^暫停$",
-            r"^幫我繼續播放$",
-            r"^繼續播放$",
-            r"^繼續$",
-            r"^下一首$",
-            r"^跳過$",
-            r"^停止播放$",
-            r"^停止$",
-            r"^現在在播什麼$",
-            r"^現在播放什麼$",
-            r"^目前在播什麼$",
-        ]
-        return any(re.fullmatch(pattern, content) for pattern in trigger_patterns)
-
-    def _parse_natural_language_command(self, content: str) -> tuple[str, dict] | None:
-        # This parser is intentionally rule-based for now.
-        # Later we can swap this small piece for an LLM that returns the same
-        # command name + kwargs shape without changing the playback flow.
-        original_text = content
-        comparable_text = content.lower()
-
-        # For this spike we only key off the action word itself.
-        play_match = re.fullmatch(r"播放\s*(.+)", comparable_text)
-        if play_match:
-            query = original_text[-len(play_match.group(1)) :].strip()
-            if query:
-                return ("play", {"search": query})
-
-        mapping = {
-            "幫我暫停": ("pause", {}),
-            "暫停": ("pause", {}),
-            "幫我繼續播放": ("resume", {}),
-            "繼續播放": ("resume", {}),
-            "繼續": ("resume", {}),
-            "下一首": ("skip", {}),
-            "跳過": ("skip", {}),
-            "停止播放": ("stop", {}),
-            "停止": ("stop", {}),
-            "現在在播什麼": ("now_playing", {}),
-            "現在播放什麼": ("now_playing", {}),
-            "目前在播什麼": ("now_playing", {}),
-        }
-        return mapping.get(comparable_text)
-
     async def _invoke_existing_command(self, message: discord.Message, command_name: str, **kwargs) -> bool:
-        # Reuse the existing commands instead of duplicating play/pause logic here.
-        # That keeps this spike focused on validating:
-        # message -> intent parsing -> ctx.invoke(existing command)
+        # Keep execution inside the existing command flow so the LLM only decides intent.
         ctx = await self.bot.get_context(message)
         command = self.bot.get_command(command_name)
         if ctx.command is not None or command is None:
+            print(
+                f"LLM DEBUG: Command invoke skipped -> "
+                f"ctx.command={getattr(ctx.command, 'qualified_name', None)}, target_command={command_name}, exists={command is not None}"
+            )
             return False
 
+        print(f"LLM DEBUG: Invoking command -> {command_name}, kwargs={kwargs}")
         await ctx.invoke(command, **kwargs)
         return True
 
@@ -78,7 +30,7 @@ class Message(commands.Cog):
         if message.author.bot:
             return
 
-        content = message.content.strip().lower()
+        content = message.content.strip()
         if not content:
             return
 
@@ -86,15 +38,36 @@ class Message(commands.Cog):
             # Let normal prefix commands like !play continue through the regular path.
             return
 
-        if not self._looks_like_natural_language_command(content):
+        if not self.bot.user or self.bot.user not in message.mentions:
+            print(f"LLM DEBUG: Message skipped because bot was not mentioned -> {content}")
             return
 
-        parsed = self._parse_natural_language_command(content)
-        if not parsed:
+        parsed = await asyncio.to_thread(llm_utils.parse_music_request, content)
+        if not parsed or parsed.action == "none":
+            print(f"LLM DEBUG: No actionable command for message -> {content}")
             return
 
-        command_name, kwargs = parsed
-        await self._invoke_existing_command(message, command_name, **kwargs)
+        if parsed.action == "play":
+            query = parsed.query.strip()
+            if not query:
+                print("LLM DEBUG: Play action returned an empty query.")
+                return
+            await self._invoke_existing_command(message, "play", search=query)
+            return
+
+        command_mapping = {
+            "pause": "pause",
+            "resume": "resume",
+            "skip": "skip",
+            "stop": "stop",
+            "now_playing": "now_playing",
+        }
+        command_name = command_mapping.get(parsed.action)
+        if not command_name:
+            print(f"LLM DEBUG: Unsupported parsed action -> {parsed.action}")
+            return
+
+        await self._invoke_existing_command(message, command_name)
 
 
 async def setup(bot: commands.Bot):

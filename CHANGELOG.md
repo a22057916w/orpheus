@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-04-30
+
+### Changes
+- Natural language control: add LLM-based message routing in [src/cogs/message.py](/f:/Code/orpheus/src/cogs/message.py) so users can mention the bot and issue music commands in plain language instead of only using prefix commands.
+- Intent parsing: add [src/utils/llm_utils.py](/f:/Code/orpheus/src/utils/llm_utils.py) to classify raw Discord messages into structured music bot actions through the OpenAI Responses API with structured JSON output.
+- Runtime config: extend [src/config.py](/f:/Code/orpheus/src/config.py) to load `OPENAI_API_KEY`, `OPENAI_MODEL`, and `OPENAI_BASE_URL` from `.env`.
+- Debug visibility: add LLM request, response, parse, and command-routing debug logs to help trace natural-language control behavior during testing.
+
+### Notes
+- Natural-language control currently runs only when the bot is explicitly mentioned in a message.
+- OpenAI billing or credits must be enabled for the LLM control path to succeed.
+
 ## 2026-04-14
 
 ### Changes
