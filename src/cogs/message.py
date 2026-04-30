@@ -10,6 +10,20 @@ class Message(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
+    def _strip_bot_mentions(self, message: discord.Message, content: str) -> str:
+        if not self.bot.user:
+            return content
+
+        mention_forms = [
+            self.bot.user.mention,
+            f"<@!{self.bot.user.id}>",
+            f"<@{self.bot.user.id}>",
+        ]
+        cleaned = content
+        for mention in mention_forms:
+            cleaned = cleaned.replace(mention, " ")
+        return " ".join(cleaned.split())
+
     async def _invoke_existing_command(self, message: discord.Message, command_name: str, **kwargs) -> bool:
         # Keep execution inside the existing command flow so the LLM only decides intent.
         ctx = await self.bot.get_context(message)
@@ -42,7 +56,10 @@ class Message(commands.Cog):
             print(f"LLM DEBUG: Message skipped because bot was not mentioned -> {content}")
             return
 
-        parsed = await asyncio.to_thread(llm_utils.parse_music_request, content)
+        llm_content = self._strip_bot_mentions(message, content)
+        print(f"LLM DEBUG: Mention-stripped content -> {llm_content}")
+
+        parsed = await asyncio.to_thread(llm_utils.parse_music_request, llm_content)
         if not parsed or parsed.action == "none":
             print(f"LLM DEBUG: No actionable command for message -> {content}")
             return
