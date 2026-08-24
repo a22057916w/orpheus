@@ -13,6 +13,16 @@ Create a local `.env` file with:
 * `DISCORD_TOKEN`
 * `SPOTIFY_CLIENT_ID`
 * `SPOTIFY_CLIENT_SECRET`
+* `OPENAI_API_KEY` (optional, enables natural-language control when the bot is mentioned)
+* `OPENAI_MODEL` and `OPENAI_BASE_URL` (optional, default to `gpt-4.1-mini` and the OpenAI API)
+
+Optional yt-dlp overrides, useful when YouTube changes what it serves:
+* `YTDLP_PLAYER_CLIENTS` - comma separated player clients to try in order, for example
+  `android,default,ios`. Use `default` for yt-dlp's own client selection. Leave unset to use
+  the built-in order.
+* `YTDLP_COOKIE_FILE` - path to a Netscape-format cookies file, needed for age-restricted or
+  region-locked videos.
+* `YTDLP_COOKIES_FROM_BROWSER` - browser name to read cookies from instead, for example `chrome`.
 
 ## Setup And Run
 For local development:
@@ -58,6 +68,15 @@ The included Kubernetes setup:
 * reads `DISCORD_TOKEN`, `SPOTIFY_CLIENT_ID`, and `SPOTIFY_CLIENT_SECRET` from the `orpheus-secrets` Kubernetes Secret
 * includes [`k8s/secret.example.yaml`](/f:/Code/orpheus/k8s/secret.example.yaml) as a safe template for the required Secret keys
 * keeps Python logs unbuffered by setting `PYTHONUNBUFFERED=1`
+
+## Troubleshooting
+* **A song is announced and then immediately reports that the queue concluded.** YouTube
+  handed out a stream URL that FFmpeg is not allowed to fetch, so FFmpeg exits within
+  milliseconds of starting. The bot now checks each candidate stream URL before playing and
+  falls through to the next player client, but if every client is refused, run
+  `pip install -U yt-dlp` first, then try `YTDLP_PLAYER_CLIENTS` or supply cookies.
+* **`Could not play <title>: YouTube would not hand out a playable audio stream`.** Same cause,
+  reported up front. The message lists what each player client returned.
 
 ## Notes
 * Playback uses `discord.py` voice, `yt-dlp`, and Spotify Web API calls.

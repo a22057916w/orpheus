@@ -12,6 +12,8 @@ from src.common.embeds import EmbedGenerator
 from src.utils import spotify_utils, ytb_utils
 
 eg = EmbedGenerator()
+# Stop walking the queue after this many tracks in a row fail to resolve.
+MAX_QUEUE_ADVANCE_ATTEMPTS = 5
 PREVIOUS_TRACKS: dict[int, list[Track]] = {}
 PLAYER_STATES: dict[int, PlayerState] = {}
 
@@ -65,14 +67,16 @@ async def play(ctx: commands.Context, vc: discord.VoiceClient, search: str) -> N
 
     # len(queue) before appending is where the first new track will land.
     start_index = len(ps.queue)
-    
+
     for track in tracks:
         ps.append_to_queue(track)
 
-    was_playing = vc.is_playing()
+    was_playing = vc.is_playing() or vc.is_paused()
     if not was_playing:
         ps.set_current_index(start_index)
-        await play_track(ctx, vc, tracks[0])
+        if not await play_track(ctx, vc, tracks[0]):
+            # The first pick failed to resolve; fall through the rest of the queue.
+            await play_next(ps, vc)
 
     if len(tracks) == 1:
         if was_playing:
@@ -82,20 +86,27 @@ async def play(ctx: commands.Context, vc: discord.VoiceClient, search: str) -> N
     await ctx.send(embed=eg.playlist_added(len(tracks)))
 
 
-async def play_track(ctx: commands.Context, vc: discord.VoiceClient, track: Track):
-    """Play a Track."""
+async def play_track(ctx: commands.Context, vc: discord.VoiceClient, track: Track) -> bool:
+    """Play a Track. Returns True only when playback actually started."""
     ps = get_player_state(vc, ctx)
 
-    track = await ytb_utils.resolve_track(track)
-    if not track:
+    try:
+        track = await ytb_utils.resolve_track(track)
+    except Exception as e:
+        print(f'ERROR resolving track: {str(e)}')
+        await ctx.send(f'Could not play **{track.title}**: {str(e)}')
+        return False
+
+    if not track or not track.stream_url:
         await ctx.send('Could not resolve this track.')
-        return
+        return False
 
     if ps.now_playing_message:
         try:
             await ps.now_playing_message.delete()
-        except:
+        except Exception:
             pass
+        ps.now_playing_message = None
 
     ps.set_current_track(track)
     ps.update_current_queue_track(track)
@@ -103,34 +114,58 @@ async def play_track(ctx: commands.Context, vc: discord.VoiceClient, track: Trac
 
     try:
         audio_source = discord.FFmpegPCMAudio(
-            track.url,
+            track.stream_url,
             executable="ffmpeg",
             before_options="-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
             options='-vn'
         )
         audio_source = discord.PCMVolumeTransformer(audio_source, volume=0.7)
-        print(f"DEBUG: Created audio source for {track.title} ({track.url})")
+        print(f"DEBUG: Created audio source for {track.title}")
     except Exception as e:
         print(f"ERROR: Failed to create audio source: {str(e)}")
         await ctx.send(f"Error creating audio source: {str(e)}")
-        return
+        return False
+
+    # Announce before starting playback. A stream FFmpeg cannot read ends within
+    # milliseconds, and the "queue has concluded" notice must never overtake this embed.
+    ps.now_playing_message = await ctx.send(embed=eg.now_playing(track))
 
     try:
-        vc.play(audio_source, after=lambda e: asyncio.run_coroutine_threadsafe(
-            on_track_end(vc), vc.client.loop
-        ))
+        vc.play(audio_source, after=lambda e: _schedule_track_end(vc, e))
         print(f"DEBUG: Started playing {track.title}")
-        print(f"DEBUG: vc.is_playing() -> {vc.is_playing()}")
     except Exception as e:
         print(f"ERROR: Failed to play track: {str(e)}")
         await ctx.send(f"Error playing track: {str(e)}")
-        return
+        return False
 
-    embed = eg.now_playing(track)
-    ps.now_playing_message = await ctx.send(embed=embed)
+    return True
 
 
-async def on_track_end(vc: discord.VoiceClient):
+def _schedule_track_end(vc: discord.VoiceClient, error: Exception | None) -> None:
+    """Runs on the voice player thread once FFmpeg exits."""
+    if error:
+        print(f'ERROR: voice playback ended with an error: {error!r}')
+    asyncio.run_coroutine_threadsafe(on_track_end(vc, error), vc.client.loop)
+
+
+async def play_next(ps: PlayerState, vc: discord.VoiceClient) -> bool:
+    """Walk forward through the queue until a track actually starts."""
+    if not ps.ctx:
+        return False
+
+    for _ in range(MAX_QUEUE_ADVANCE_ATTEMPTS):
+        next_track = ps.advance_to_next_track()
+        if not next_track:
+            return False
+
+        print(f'DEBUG: Playing next track from queue: {next_track.title}')
+        if await play_track(ps.ctx, vc, next_track):
+            return True
+
+    return False
+
+
+async def on_track_end(vc: discord.VoiceClient, error: Exception | None = None):
     """Called when a track ends."""
     try:
         ps = get_player_state(vc)
@@ -141,27 +176,32 @@ async def on_track_end(vc: discord.VoiceClient):
             if len(history) > 10:
                 history.pop(0)
 
-        if ps.is_track_loop_enabled() and current_track:
-            print('DEBUG: Replaying current track (loop mode)')
-            await play_track(ps.ctx, vc, current_track)
+        if error and ps.ctx:
+            await ps.ctx.send(f'Playback error: {str(error)}')
+
+        # `leave`/disconnect also fires this callback; there is nothing left to play.
+        if not vc.is_connected():
             return
 
-        next_track = ps.advance_to_next_track()
-        if next_track:
-            print(f'DEBUG: Playing next track from queue: {next_track.title}')
-            await play_track(ps.ctx, vc, next_track)
-        else:
-            ps.set_current_track(None)
-            print('DEBUG: Queue concluded, sending message')
-            if ps.ctx:
-                await ps.ctx.send('**Queue has concluded.**')
+        if ps.is_track_loop_enabled() and current_track:
+            print('DEBUG: Replaying current track (loop mode)')
+            if await play_track(ps.ctx, vc, current_track):
+                return
+
+        if await play_next(ps, vc):
+            return
+
+        ps.set_current_track(None)
+        print('DEBUG: Queue concluded, sending message')
+        if ps.ctx:
+            await ps.ctx.send('**Queue has concluded.**')
     except Exception as e:
         print(f'ERROR in on_track_end: {str(e)}')
         try:
             ps = get_player_state(vc)
             if ps.ctx:
                 await ps.ctx.send(f'Error playing next track: {str(e)}')
-        except:
+        except Exception:
             pass
 
 

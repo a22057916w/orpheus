@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-08-24
+
+### Fixed
+- Playback: `!play` announced a track and then immediately reported `Queue has concluded.` YouTube now serves the adaptive streams that yt-dlp picks by default behind checks that answer FFmpeg with `403 Forbidden`, so FFmpeg exited within milliseconds and `discord.py` ran the track-finished callback right away. [src/utils/ytb_utils.py](/f:/Code/orpheus/src/utils/ytb_utils.py) now tries a list of player clients and verifies each candidate stream URL with a one-byte request before handing it to FFmpeg.
+- Stale stream URLs: queued tracks stored the direct audio URL, which expires. The queue now stores the YouTube watch URL and resolves a fresh stream right before each track plays, reusing the existing URL only while it still responds.
+- Queue advance: a track that fails to resolve no longer stops playback. [src/utils/play_utils.py](/f:/Code/orpheus/src/utils/play_utils.py) walks forward through the queue until a track starts, up to `MAX_QUEUE_ADVANCE_ATTEMPTS`.
+- Message order: the now-playing embed is sent before playback starts, so the queue-finished notice can no longer overtake it.
+- Playback errors: the error passed to the `discord.py` after-playback callback was discarded. It is now logged and reported in the channel instead of being reported as a finished queue.
+- Event loop: yt-dlp extraction ran inline in the event loop and blocked the bot during searches and playlist loads. It now runs through `asyncio.to_thread`.
+- Disconnects: leaving a voice channel mid-track no longer triggers a queue advance on a disconnected voice client.
+- `!play` while paused now queues the track instead of starting a second one over the paused track.
+
+### Changes
+- Runtime config: [src/config.py](/f:/Code/orpheus/src/config.py) reads optional `YTDLP_PLAYER_CLIENTS`, `YTDLP_COOKIE_FILE`, and `YTDLP_COOKIES_FROM_BROWSER` so the YouTube extraction path can be adjusted without a code change.
+- Track model: [src/common/track.py](/f:/Code/orpheus/src/common/track.py) separates the page URL (`url`) from the short-lived audio URL (`stream_url`).
+
+### Notes
+- On this machine only the `android` player client currently returns a stream URL that FFmpeg can fetch; the others are refused with `403`. The client order is a fallback chain, so playback keeps working as YouTube changes which clients are served.
+
 ## 2026-04-30
 
 ### Changes
